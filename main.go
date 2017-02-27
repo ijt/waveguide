@@ -79,24 +79,25 @@ type ConditionsOrError struct {
 }
 
 var locations = []Location{
-	Location{"Lindamar-Pacifica", "/Linda-Mar-Pacifica-Surf-Report/819/"},
-	Location{"Ocean Beach SF", "/Ocean-Beach-Surf-Report/255/"},
+	Location{"Bay Area: Lindamar-Pacifica", "/Linda-Mar-Pacifica-Surf-Report/819/"},
+	Location{"Bay Area: Stinson Beach", "/Stinson-Beach-Surf-Report/4216/"},
+	Location{"Bay Area: Ocean Beach SF", "/Ocean-Beach-Surf-Report/255/"},
+	Location{"Bay Area: Princeton Jetty", "/Princeton-Jetty-Surf-Report/3679/"},
 	Location{"Bali: Kuta Beach", "/Kuta-Beach-Surf-Report/566/"},
 	Location{"Bolinas", "/Bolinas-Surf-Report/4221/"},
 	Location{"Bolinas Jetty", "/Bolinas-Jetty-Surf-Report/4215/"},
 	Location{"Cairns: Sunshine Beach", "/Sunshine-Beach-Surf-Report/1004/"},
-	// Cairns
-	// Cuba
-	// Kauai
-	// Maui (break this down)
-	// Mexico
-	// New Zealand
-	// Oahu
-	// Panama
-	// Princeton Jetty
-	// San Diego
-	// Stinson Beach
-	// Sydney
+	Location{"Oahu: Waikiki Beach", "/Queens-Canoes-Waikiki-Surf-Report/662/"},
+	Location{"Kauai: Hanalei Bay", "/Hanalei-Bay-Surf-Report/3051/"},
+	Location{"Kauai: Polihale", "/Polihale-Surf-Report/3080/"},
+	Location{"Maui: Lahaina", "/Lahaina-Harbor-Breakwall-Surf-Report/4287/"},
+	Location{"Oahu: Laniakea", "/Laniakea-Surf-Report/3672/"},
+	Location{"Oahu: Pipeline", "/Pipeline-Backdoor-Surf-Report/616/"},
+	Location{"Oahu: Sunset", "/Sunset-Surf-Report/657/"},
+	Location{"Sydney: Manly Beach", "/Sydney-Manly-Surf-Report/526/"},
+	Location{"Sydney: Bodi Beach", "/Sydney-Bondi-Surf-Report/996/"},
+	Location{"New Zealand: Dunedin: Martins Bay", "/Martins-Bay-Surf-Report/3913/"},
+	Location{"New Zealand: Dunedin: Papatowai", "/Papatowai-Surf-Report/124/"},
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
