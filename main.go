@@ -16,7 +16,7 @@ func main() {
 			errs = append(errs, err)
 			continue
 		}
-		fmt.Printf("%s: %s, %s\n", loc.name, cond.quality, cond.height)
+		fmt.Printf("%s: %s, %s, %s\n", loc.name, cond.quality, cond.height, loc.surflineUrl)
 	}
 	if len(errs) > 0 {
 		fmt.Printf("Some errors occurred:\n")
@@ -38,6 +38,11 @@ type Conditions struct {
 
 var locations = []Location{
 	Location{"Pacifica", "http://www.surfline.com/surf-report/pacifica-lindamar-northern-california_5013/"},
+	Location{"Ocean Beach SF", "http://www.surfline.com/surf-report/ocean-beach-sf-northern-california_4127/"},
+	Location{"Malibu", "http://www.surfline.com/surf-report/malibu-southern-california_4209/"},
+	Location{"Pismo Beach", "http://www.surfline.com/surf-report/pismo-beach-pier-central-california_5065/"},
+	Location{"Pipeline Oahu", "http://www.surfline.com/surf-report/pipeline-oahu_4750/"},
+	Location{"Sunset Oahu", "http://www.surfline.com/surf-report/sunset-oahu_4746/"},
 	// half moon bay
 	// stinson beach
 	// maui
@@ -51,8 +56,8 @@ var locations = []Location{
 	// spain
 }
 
-var descRx = regexp.MustCompile(`\w+ Conditions`)
-var heightRx = regexp.MustCompile(`\d+-\d+ ft \+?`)
+var descRx = regexp.MustCompile(`>(\w+ Conditions)<`)
+var heightRx = regexp.MustCompile(`\d+-\d+ ft( \+)?`)
 
 // GetSurflineConditions fetches the surfline page for the given location and returns the subjective evaluation
 // of the conditions there.
@@ -66,8 +71,13 @@ func (loc *Location) GetSurflineConditions() (*Conditions, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetSurflineConditions for %s failed to read body. %v", loc.name, err)
 	}
+	descMatch := descRx.FindSubmatch(body)
+	quality := []byte("missing")
+	if len(descMatch) == 2 {
+		quality = descMatch[1]
+	}
 	cond := &Conditions{
-		quality: descRx.Find(body),
+		quality: quality,
 		height:  heightRx.Find(body),
 	}
 	return cond, nil
