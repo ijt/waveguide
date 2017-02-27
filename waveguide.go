@@ -22,11 +22,25 @@ var tmpl = template.Must(template.New("main").Parse(`
 <html>
 	<head>
 		<title>Waveguide</title>
-		<link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css" integrity="sha384-UQiGfs9ICog+LwheBSRCt1o5cbyKIHbwjWscjemyBMT9YCUMZffs6UqUTd0hObXD" crossorigin="anonymous">
+		<style>
+			body {
+				font-family: monospace;
+			}
+			table {
+				border-collapse: separate;
+				font-size: 12pt;
+			}
+			th {
+				text-align: left;
+			}
+			th, td {
+				padding: 0 1em 0.5ex 0;
+			}
+		</style>
 	</head>
 	<body>
 		{{if .Conds}}
-		<table class="pure-table">
+		<table>
 			<thead>
 				<th>Location</th>
 				<th>Conditions</th>
