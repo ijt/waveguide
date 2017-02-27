@@ -1,7 +1,6 @@
-package main
+package waveguide
 
 import (
-	"flag"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -10,15 +9,13 @@ import (
 	"regexp"
 	"sort"
 	"sync"
-	"time"
+
+	"appengine"
+	"appengine/urlfetch"
 )
 
-var addr = flag.String("a", ":4089", "server address")
-
-func main() {
+func init() {
 	http.HandleFunc("/", handleRoot)
-	log.Printf("Listening on %s", *addr)
-	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
 var tmpl = template.Must(template.New("main").Parse(`
@@ -28,6 +25,7 @@ var tmpl = template.Must(template.New("main").Parse(`
 		<link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css" integrity="sha384-UQiGfs9ICog+LwheBSRCt1o5cbyKIHbwjWscjemyBMT9YCUMZffs6UqUTd0hObXD" crossorigin="anonymous">
 	</head>
 	<body>
+		{{if .Conds}}
 		<table class="pure-table">
 			<thead>
 				<th>Location</th>
@@ -44,6 +42,7 @@ var tmpl = template.Must(template.New("main").Parse(`
 				{{end}}
 			</tbody>
 		</table>
+		{{end}}
 
 		{{if .Errs}}
 		<br>
@@ -105,6 +104,9 @@ var locations = []Location{
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
+	client := urlfetch.Client(ctx)
+
 	// Spawn requests to get the conditions.
 	ch := make(chan *ConditionsOrError)
 	var wg sync.WaitGroup
@@ -113,7 +115,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			cond, err := loc.GetConditions()
+			cond, err := loc.GetConditions(client)
 			coe := &ConditionsOrError{}
 			if err != nil {
 				coe.Err = &Error{
@@ -144,14 +146,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Sort locations by rating and name.
-	sort.Slice(conds, func(i, j int) bool {
-		ci := conds[i]
-		cj := conds[j]
-		if ci.Rating == cj.Rating {
-			return ci.Loc.Name < cj.Loc.Name
-		}
-		return ci.Rating > cj.Rating
-	})
+	sort.Sort(ByRating(conds))
 
 	// Render the results.
 	data := struct {
@@ -164,15 +159,25 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type ByRating []*Conditions
+
+func (r ByRating) Len() int      { return len(r) }
+func (r ByRating) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
+func (r ByRating) Less(i, j int) bool {
+	ci := r[i]
+	cj := r[j]
+	if ci.Rating == cj.Rating {
+		return ci.Loc.Name < cj.Loc.Name
+	}
+	return ci.Rating > cj.Rating
+}
+
 var starRx = regexp.MustCompile(`<li class="active"> *<i class="glyphicon glyphicon-star"></i> *</li>`)
 var heightRx = regexp.MustCompile(`(\d+(?:-\d+)?)<small>ft`)
 
-func (loc *Location) GetConditions() (*Conditions, error) {
+func (loc *Location) GetConditions(client *http.Client) (*Conditions, error) {
 	url := "http://magicseaweed.com" + loc.MagicSeaweedPath
 	log.Printf("Fetching %s", url)
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
