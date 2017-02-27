@@ -99,23 +99,11 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		close(ech)
 	}()
 
-	// Gather conditions
-	conds := make([]*Conditions, 0, len(locations))
-	for c := range ch {
-		conds = append(conds, c)
-	}
-
-	// Gather errors
-	errs := make([]*Error, 0, len(locations))
-	for e := range ech {
-		errs = append(errs, e)
-	}
-
 	// Render the results.
 	data := struct {
-		Conds []*Conditions
-		Errs  []*Error
-	}{Conds: conds, Errs: errs}
+		Conds chan *Conditions
+		Errs  chan *Error
+	}{Conds: ch, Errs: ech}
 	err := tmpl.Execute(w, data)
 	if err != nil {
 		log.Printf("Failed to execute template. %v", err)
