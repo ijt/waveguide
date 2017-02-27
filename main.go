@@ -41,6 +41,9 @@ var tmpl = template.Must(template.New("main").Parse(`
 			{{end}}
 		</table>
 
+		{{if .Errs}}
+		<br>
+		<b>Errors</b>:
 		<table>
 			{{range .Errs}}
 			<tr>
@@ -49,6 +52,7 @@ var tmpl = template.Must(template.New("main").Parse(`
 			</tr>
 			{{end}}
 		</table>
+		{{end}}
 	</body>
 </html>
 `))
