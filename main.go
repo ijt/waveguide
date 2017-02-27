@@ -33,7 +33,7 @@ var tmpl = template.Must(template.New("main").Parse(`
 			</thead>
 			{{range .Conds}}
 			<tr>
-				<td><a href="{{.Loc.MagicSeaweedUrl}}">{{.Loc.Name}}</a></td>
+				<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.Name}}</a></td>
 				<td>{{.Rating}}</td>
 				<td>{{.Details}}</td>
 			</tr>
@@ -43,7 +43,7 @@ var tmpl = template.Must(template.New("main").Parse(`
 		<table>
 			{{range .Errs}}
 			<tr>
-				<td><a href="{{.Loc.MagicSeaweedUrl}}">{{.Loc.Name}}</a></td>
+				<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.Name}}</a></td>
 				<td>{{.Err}}</td>
 			</tr>
 			{{end}}
@@ -53,8 +53,8 @@ var tmpl = template.Must(template.New("main").Parse(`
 `))
 
 type Location struct {
-	Name            string
-	MagicSeaweedUrl string
+	Name             string
+	MagicSeaweedPath string
 }
 
 type Conditions struct {
@@ -69,9 +69,9 @@ type Error struct {
 }
 
 var locations = []Location{
-	Location{"Lindamar-Pacifica", "http://magicseaweed.com/Linda-Mar-Pacifica-Surf-Report/819/"},
-	Location{"Ocean Beach SF", "http://magicseaweed.com/Ocean-Beach-Surf-Report/255/"},
-	// Bali
+	Location{"Lindamar-Pacifica", "/Linda-Mar-Pacifica-Surf-Report/819/"},
+	Location{"Ocean Beach SF", "/Ocean-Beach-Surf-Report/255/"},
+	Location{"Bali: Kuta Beach", "/Kuta-Beach-Surf-Report/566/"},
 	// Bolinas
 	// Bolinas Jetty
 	// Cairns
@@ -131,8 +131,9 @@ var starRx = regexp.MustCompile(`<li class="active"> *<i class="glyphicon glyphi
 var heightRx = regexp.MustCompile(`(\d+-\d+)<small>ft`)
 
 func (loc *Location) GetConditions() (*Conditions, error) {
-	log.Printf("Fetching %s", loc.MagicSeaweedUrl)
-	resp, err := http.Get(loc.MagicSeaweedUrl)
+	url := "http://magicseaweed.com" + loc.MagicSeaweedPath
+	log.Printf("Fetching %s", url)
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
