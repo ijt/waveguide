@@ -107,14 +107,10 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		loc := loc
 		wg.Add(1)
 		go func() {
-			defer func() {
-				log.Printf("Calling wg.Done()")
-				wg.Done()
-			}()
+			defer wg.Done()
 			cond, err := loc.GetConditions()
 			coe := &ConditionsOrError{}
 			if err != nil {
-				log.Printf("In goroutine, got an error: %v", err)
 				coe.Err = &Error{
 					Loc: &loc,
 					Err: err,
