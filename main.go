@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"sort"
 	"sync"
 	"time"
 )
@@ -138,6 +139,16 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		}
 		conds = append(conds, coe.Cond)
 	}
+
+	// Sort locations by rating and name.
+	sort.Slice(conds, func(i, j int) bool {
+		ci := conds[i]
+		cj := conds[j]
+		if ci.Rating == cj.Rating {
+			return ci.Loc.Name < cj.Loc.Name
+		}
+		return ci.Rating > cj.Rating
+	})
 
 	// Render the results.
 	data := struct {
