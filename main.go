@@ -25,21 +25,24 @@ var tmpl = template.Must(template.New("main").Parse(`
 <html>
 	<head>
 		<title>Wave Hunter</title>
+		<link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css" integrity="sha384-UQiGfs9ICog+LwheBSRCt1o5cbyKIHbwjWscjemyBMT9YCUMZffs6UqUTd0hObXD" crossorigin="anonymous">
 	</head>
 	<body>
-		<table>
+		<table class="pure-table pure-table-horizontal">
 			<thead>
 				<th>Location</th>
 				<th>Conditions</th>
 				<th>Wave Height</th>
 			</thead>
-			{{range .Conds}}
-			<tr>
-				<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.Name}}</a></td>
-				<td>{{.Rating}}</td>
-				<td>{{.Details}}</td>
-			</tr>
-			{{end}}
+			<tbody>
+				{{range .Conds}}
+				<tr>
+					<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.Name}}</a></td>
+					<td>{{.Rating}}</td>
+					<td>{{.Details}}</td>
+				</tr>
+				{{end}}
+			</tbody>
 		</table>
 
 		{{if .Errs}}
