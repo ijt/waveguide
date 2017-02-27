@@ -180,6 +180,5 @@ func (loc *Location) GetConditions() (*Conditions, error) {
 		Rating:  rating,
 		Details: details,
 	}
-	log.Printf("Succeeded, with conditions %+v", cond)
 	return cond, nil
 }
