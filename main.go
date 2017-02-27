@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"regexp"
 	"sync"
+	"time"
 )
 
 var addr = flag.String("a", ":4089", "server address")
@@ -153,7 +154,10 @@ var heightRx = regexp.MustCompile(`(\d+-\d+)<small>ft`)
 func (loc *Location) GetConditions() (*Conditions, error) {
 	url := "http://magicseaweed.com" + loc.MagicSeaweedPath
 	log.Printf("Fetching %s", url)
-	resp, err := http.Get(url)
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
 	}
