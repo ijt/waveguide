@@ -64,16 +64,21 @@ type Conditions struct {
 }
 
 type Error struct {
-	Loc Location
+	Loc *Location
 	Err error
+}
+
+type ConditionsOrError struct {
+	Cond *Conditions
+	Err  *Error
 }
 
 var locations = []Location{
 	Location{"Lindamar-Pacifica", "/Linda-Mar-Pacifica-Surf-Report/819/"},
 	Location{"Ocean Beach SF", "/Ocean-Beach-Surf-Report/255/"},
 	Location{"Bali: Kuta Beach", "/Kuta-Beach-Surf-Report/566/"},
-	// Bolinas
-	// Bolinas Jetty
+	Location{"Bolinas", "/Bolinas-Surf-Report/4221/"},
+	Location{"Bolinas Jetty", "/Bolinas-Jetty-Surf-Report/4215/"},
 	// Cairns
 	// Cuba
 	// Kauai
@@ -90,37 +95,52 @@ var locations = []Location{
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	// Spawn requests to get the conditions.
-	ch := make(chan *Conditions)
-	ech := make(chan *Error)
+	ch := make(chan *ConditionsOrError)
 	var wg sync.WaitGroup
 	for _, loc := range locations {
 		loc := loc
 		wg.Add(1)
 		go func() {
-			defer wg.Done()
+			defer func() {
+				log.Printf("Calling wg.Done()")
+				wg.Done()
+			}()
 			cond, err := loc.GetConditions()
+			coe := &ConditionsOrError{}
 			if err != nil {
-				ech <- &Error{
-					Loc: loc,
+				log.Printf("In goroutine, got an error: %v", err)
+				coe.Err = &Error{
+					Loc: &loc,
 					Err: err,
 				}
-				return
+			} else {
+				coe.Cond = cond
 			}
-			ch <- cond
+			ch <- coe
 		}()
 	}
 
 	go func() {
 		wg.Wait()
 		close(ch)
-		close(ech)
 	}()
+
+	// Gather conditions and errors.
+	conds := make([]*Conditions, 0, len(locations))
+	errs := make([]*Error, 0, len(locations))
+	for coe := range ch {
+		if coe.Err != nil {
+			errs = append(errs, coe.Err)
+			continue
+		}
+		conds = append(conds, coe.Cond)
+	}
 
 	// Render the results.
 	data := struct {
-		Conds chan *Conditions
-		Errs  chan *Error
-	}{Conds: ch, Errs: ech}
+		Conds []*Conditions
+		Errs  []*Error
+	}{Conds: conds, Errs: errs}
 	err := tmpl.Execute(w, data)
 	if err != nil {
 		log.Printf("Failed to execute template. %v", err)
