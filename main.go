@@ -84,6 +84,7 @@ var locations = []Location{
 	Location{"Bali: Kuta Beach", "/Kuta-Beach-Surf-Report/566/"},
 	Location{"Bolinas", "/Bolinas-Surf-Report/4221/"},
 	Location{"Bolinas Jetty", "/Bolinas-Jetty-Surf-Report/4215/"},
+	Location{"Cairns: Sunshine Beach", "/Sunshine-Beach-Surf-Report/1004/"},
 	// Cairns
 	// Cuba
 	// Kauai
