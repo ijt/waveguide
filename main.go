@@ -30,8 +30,8 @@ var tmpl = template.Must(template.New("main").Parse(`
 		<table>
 			<thead>
 				<th>Location</th>
-				<th>Current Conditions</th>
-				<th>Details</th>
+				<th>Conditions</th>
+				<th>Wave Height</th>
 			</thead>
 			{{range .Conds}}
 			<tr>
