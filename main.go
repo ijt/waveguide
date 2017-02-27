@@ -151,7 +151,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 var starRx = regexp.MustCompile(`<li class="active"> *<i class="glyphicon glyphicon-star"></i> *</li>`)
-var heightRx = regexp.MustCompile(`(\d+-\d+)<small>ft`)
+var heightRx = regexp.MustCompile(`(\d+(?:-\d+)?)<small>ft`)
 
 func (loc *Location) GetConditions() (*Conditions, error) {
 	url := "http://magicseaweed.com" + loc.MagicSeaweedPath
