@@ -70,6 +70,22 @@ type Error struct {
 
 var locations = []Location{
 	Location{"Lindamar-Pacifica", "http://magicseaweed.com/Linda-Mar-Pacifica-Surf-Report/819/"},
+	Location{"Ocean Beach SF", "http://magicseaweed.com/Ocean-Beach-Surf-Report/255/"},
+	// Bali
+	// Bolinas
+	// Bolinas Jetty
+	// Cairns
+	// Cuba
+	// Kauai
+	// Maui (break this down)
+	// Mexico
+	// New Zealand
+	// Oahu
+	// Panama
+	// Princeton Jetty
+	// San Diego
+	// Stinson Beach
+	// Sydney
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
