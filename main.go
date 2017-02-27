@@ -78,6 +78,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	ech := make(chan *Error)
 	var wg sync.WaitGroup
 	for _, loc := range locations {
+		loc := loc
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
