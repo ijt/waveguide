@@ -28,7 +28,7 @@ var tmpl = template.Must(template.New("main").Parse(`
 		<link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css" integrity="sha384-UQiGfs9ICog+LwheBSRCt1o5cbyKIHbwjWscjemyBMT9YCUMZffs6UqUTd0hObXD" crossorigin="anonymous">
 	</head>
 	<body>
-		<table class="pure-table pure-table-horizontal">
+		<table class="pure-table">
 			<thead>
 				<th>Location</th>
 				<th>Conditions</th>
