@@ -29,8 +29,8 @@ var tmpl = template.Must(template.New("main").Parse(`
 	<body>
 		<table>
 			<thead>
-				<th>Name</th>
-				<th>Rating</th>
+				<th>Location</th>
+				<th>Current Conditions</th>
 				<th>Details</th>
 			</thead>
 			{{range .Conds}}
