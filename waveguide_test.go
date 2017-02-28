@@ -22,3 +22,23 @@ func TestHeightRx(t *testing.T) {
 		}
 	}
 }
+
+func TestForecastRx(t *testing.T) {
+	cases := []struct {
+		in   string
+		want []string
+	}{
+		{`<option value="/Manhattan-Beach-Surf-Report/281/"> Manhattan Beach </option>`, []string{"/Manhattan-Beach-Surf-Report/281/", "Manhattan Beach"}},
+	}
+
+	for _, c := range cases {
+		ssm := reportRx.FindStringSubmatch(c.in)
+		if len(ssm) != 3 {
+			t.Errorf("Got %d submatches, want 3", len(ssm))
+			continue
+		}
+		if ssm[1] != c.want[0] || ssm[2] != c.want[1] {
+			t.Errorf("Got %v for rest of submatches, want %v", ssm[1:], c.want)
+		}
+	}
+}

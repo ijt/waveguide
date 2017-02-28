@@ -16,6 +16,7 @@ import (
 var addr = flag.String("addr", ":4089", "Server address")
 var timeout = flag.Duration("timeout", 5*time.Second, "Timeout for HTTP GETs")
 var conditionsInterval = flag.Duration("conditions_interval", 10*time.Minute, "Interval between updating conditions")
+var siteMapUrl = flag.String("site_map_url", "http://magicseaweed.com/site-map.php", "URL of the site map")
 
 func main() {
 	http.HandleFunc("/", handleRoot)
@@ -96,28 +97,6 @@ type Error struct {
 	Err error
 }
 
-var locations = []*Location{
-	&Location{"Bay Area: Lindamar-Pacifica", "/Linda-Mar-Pacifica-Surf-Report/819/"},
-	&Location{"Bay Area: Stinson Beach", "/Stinson-Beach-Surf-Report/4216/"},
-	&Location{"Bay Area: Ocean Beach SF", "/Ocean-Beach-Surf-Report/255/"},
-	&Location{"Bay Area: Princeton Jetty", "/Princeton-Jetty-Surf-Report/3679/"},
-	&Location{"Bali: Kuta Beach", "/Kuta-Beach-Surf-Report/566/"},
-	&Location{"Bolinas", "/Bolinas-Surf-Report/4221/"},
-	&Location{"Bolinas Jetty", "/Bolinas-Jetty-Surf-Report/4215/"},
-	&Location{"Cairns: Sunshine Beach", "/Sunshine-Beach-Surf-Report/1004/"},
-	&Location{"Oahu: Waikiki Beach", "/Queens-Canoes-Waikiki-Surf-Report/662/"},
-	&Location{"Kauai: Hanalei Bay", "/Hanalei-Bay-Surf-Report/3051/"},
-	&Location{"Kauai: Polihale", "/Polihale-Surf-Report/3080/"},
-	&Location{"Maui: Lahaina", "/Lahaina-Harbor-Breakwall-Surf-Report/4287/"},
-	&Location{"Oahu: Laniakea", "/Laniakea-Surf-Report/3672/"},
-	&Location{"Oahu: Pipeline", "/Pipeline-Backdoor-Surf-Report/616/"},
-	&Location{"Oahu: Sunset", "/Sunset-Surf-Report/657/"},
-	&Location{"Sydney: Manly Beach", "/Sydney-Manly-Surf-Report/526/"},
-	&Location{"Sydney: Bodi Beach", "/Sydney-Bondi-Surf-Report/996/"},
-	&Location{"New Zealand: Dunedin: Martins Bay", "/Martins-Bay-Surf-Report/3913/"},
-	&Location{"New Zealand: Dunedin: Papatowai", "/Papatowai-Surf-Report/124/"},
-}
-
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	// Sort locations by rating and name.
 	mu.Lock()
@@ -138,8 +117,41 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateConditionsAllLocations() {
-	// Gather conditions and errors.
 	client := &http.Client{Timeout: *timeout}
+
+	// Gather locations.
+	log.Printf("Fetching %s", *siteMapUrl)
+	resp, err := client.Get(*siteMapUrl)
+	if err != nil {
+		log.Printf("Failed to get site map. %v", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Failed to read response body of site map. %v", err)
+	}
+	reportMatches := reportRx.FindAllSubmatch(body, -1)
+	log.Printf("report matches: %s", reportMatches)
+	for _, match := range reportMatches {
+		path := strings.TrimSpace(string(match[1]))
+		name := strings.TrimSpace(string(match[2]))
+		loc, ok := locations[name]
+		if ok {
+			if loc.MagicSeaweedPath != path {
+				log.Printf("Updating path for %s from %s to %s", loc.Name, loc.MagicSeaweedPath, path)
+				loc.MagicSeaweedPath = path
+			}
+		} else {
+			loc := &Location{
+				Name:             name,
+				MagicSeaweedPath: path,
+			}
+			locations[name] = loc
+			log.Printf("Got new location: %+v", loc)
+		}
+	}
+
+	// Gather conditions and errors.
 	mu.Lock()
 	conds = make([]*Conditions, 0, len(locations))
 	errs = make([]*Error, 0, len(locations))
@@ -162,7 +174,8 @@ func UpdateConditionsAllLocations() {
 	}
 }
 
-var mu sync.Mutex
+var locations = make(map[string]*Location)
+var mu sync.Mutex // for conds and errs
 var conds []*Conditions
 var errs []*Error
 
@@ -181,6 +194,7 @@ func (r ByRating) Less(i, j int) bool {
 
 var starRx = regexp.MustCompile(`<li class="active"> *<i class="glyphicon glyphicon-star"></i> *</li>`)
 var heightRx = regexp.MustCompile(`(\d+(?:-\d+)?)<small>ft`)
+var reportRx = regexp.MustCompile(`<option value="(/[^"]+-Surf-Report/\d+/)">([^<]+)\s*</option>`)
 
 func (loc *Location) GetConditions(client *http.Client) (*Conditions, error) {
 	url := "http://magicseaweed.com" + loc.MagicSeaweedPath
