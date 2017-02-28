@@ -127,13 +127,17 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	// Sort locations by rating and name.
 	mu.Lock()
 	defer mu.Unlock()
-	sort.Sort(ByRating(conds))
+	conds2 := make([]*Conditions, 0, len(conds))
+	for _, c := range conds {
+		conds2 = append(conds2, c)
+	}
+	sort.Sort(ByRating(conds2))
 
 	// Render the results.
 	data := struct {
 		Conds []*Conditions
 		Head  template.HTML
-	}{Conds: conds, Head: head}
+	}{Conds: conds2, Head: head}
 	err := tmpl.Execute(w, data)
 	if err != nil {
 		log.Printf("Failed to execute template. %v", err)
@@ -177,7 +181,6 @@ func UpdateConditionsAllLocations() {
 
 	// Gather conditions and errors.
 	mu.Lock()
-	conds = make([]*Conditions, 0, len(locations))
 	errs = make([]*Error, 0, len(locations))
 	mu.Unlock()
 	for _, loc := range locations {
@@ -193,14 +196,14 @@ func UpdateConditionsAllLocations() {
 			continue
 		}
 		mu.Lock()
-		conds = append(conds, cond)
+		conds[loc.Name] = cond
 		mu.Unlock()
 	}
 }
 
 var locations = make(map[string]*Location)
 var mu sync.Mutex // for conds and errs
-var conds []*Conditions
+var conds = make(map[string]*Conditions)
 var errs []*Error
 
 type ByRating []*Conditions
