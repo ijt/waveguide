@@ -50,7 +50,7 @@ var tmpl = template.Must(template.New("main").Parse(`
 				{{range .Conds}}
 				<tr>
 					<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.Name}}</a></td>
-					<td>{{.Rating}}</td>
+					<td>{{.Stars}}</td>
 					<td>{{.Details}}</td>
 				</tr>
 				{{end}}
@@ -81,7 +81,7 @@ type Location struct {
 
 type Conditions struct {
 	Loc     *Location
-	Rating  string
+	Rating  int
 	Details string
 }
 
@@ -201,12 +201,12 @@ func (loc *Location) GetConditions(client *http.Client) (*Conditions, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read body. %v", err)
 	}
-	stars := starRx.FindAll(body, -1)
+	foundStars := starRx.FindAll(body, -1)
 	hMatch := heightRx.FindSubmatch(body)
 	if len(hMatch) != 2 {
 		return nil, fmt.Errorf("Wave height regex failed.")
 	}
-	rating := fmt.Sprintf("%d/5 stars", len(stars))
+	rating := len(foundStars)
 	details := fmt.Sprintf("%s ft", hMatch[1])
 	cond := &Conditions{
 		Loc:     loc,
@@ -214,4 +214,15 @@ func (loc *Location) GetConditions(client *http.Client) (*Conditions, error) {
 		Details: details,
 	}
 	return cond, nil
+}
+
+func (c *Conditions) Stars() string {
+	runes := make([]rune, 0, 5)
+	for i := 0; i < c.Rating; i++ {
+		runes = append(runes, '★')
+	}
+	for i := 0; i < 5-c.Rating; i++ {
+		runes = append(runes, '☆')
+	}
+	return string(runes)
 }
