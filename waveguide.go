@@ -1,6 +1,7 @@
-package waveguide
+package main
 
 import (
+	"flag"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -9,13 +10,16 @@ import (
 	"regexp"
 	"sort"
 	"sync"
-
-	"appengine"
-	"appengine/urlfetch"
+	"time"
 )
 
-func init() {
+var addr = flag.String("addr", ":4089", "Server address")
+var timeout = flag.Duration("timeout", 5*time.Second, "Timeout for HTTP GETs")
+
+func main() {
 	http.HandleFunc("/", handleRoot)
+	log.Printf("Listending on %s", *addr)
+	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
 var tmpl = template.Must(template.New("main").Parse(`
@@ -118,8 +122,7 @@ var locations = []Location{
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
-	ctx := appengine.NewContext(r)
-	client := urlfetch.Client(ctx)
+	client := &http.Client{Timeout: *timeout}
 
 	// Spawn requests to get the conditions.
 	ch := make(chan *ConditionsOrError)

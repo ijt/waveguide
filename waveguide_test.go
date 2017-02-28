@@ -1,4 +1,4 @@
-package waveguide
+package main
 
 import "testing"
 
