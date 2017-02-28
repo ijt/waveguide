@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -20,13 +21,13 @@ var siteMapUrl = flag.String("site_map_url", "http://magicseaweed.com/site-map.p
 
 func main() {
 	http.HandleFunc("/", handleRoot)
+	http.HandleFunc("/errors", handleErrors)
 	go KeepConditionsUpdated()
 	log.Printf("Listending on %s", *addr)
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
-var tmpl = template.Must(template.New("main").Parse(`
-<html>
+var head = template.HTML(`
 	<head>
 		<title>Waveguide</title>
 		<style>
@@ -45,6 +46,28 @@ var tmpl = template.Must(template.New("main").Parse(`
 			}
 		</style>
 	</head>
+`)
+
+var errsTmpl = template.Must(template.New("errs").Parse(`
+<html>
+{{.Head}}
+	<body>
+		<b>Errors</b>:
+		<table>
+			{{range .Errs}}
+			<tr>
+				<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.Name}}</a></td>
+				<td>{{.Err}}</td>
+			</tr>
+			{{end}}
+		</table>
+	</body>
+</html>
+`))
+
+var tmpl = template.Must(template.New("main").Parse(`
+<html>
+{{.Head}}
 	<body>
 		{{if .Conds}}
 		<table>
@@ -62,19 +85,6 @@ var tmpl = template.Must(template.New("main").Parse(`
 				</tr>
 				{{end}}
 			</tbody>
-		</table>
-		{{end}}
-
-		{{if .Errs}}
-		<br>
-		<b>Errors</b>:
-		<table>
-			{{range .Errs}}
-			<tr>
-				<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.Name}}</a></td>
-				<td>{{.Err}}</td>
-			</tr>
-			{{end}}
 		</table>
 		{{end}}
 	</body>
@@ -97,20 +107,34 @@ type Error struct {
 	Err error
 }
 
+func handleErrors(w http.ResponseWriter, r *http.Request) {
+	mu.Lock()
+	defer mu.Unlock()
+	data := struct {
+		Errs []*Error
+		Head template.HTML
+	}{
+		Errs: errs,
+		Head: head,
+	}
+	err := errsTmpl.Execute(w, data)
+	if err != nil {
+		log.Printf("Failed to execute template. %v", err)
+	}
+}
+
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	// Sort locations by rating and name.
 	mu.Lock()
+	defer mu.Unlock()
 	sort.Sort(ByRating(conds))
-	mu.Unlock()
 
 	// Render the results.
-	mu.Lock()
 	data := struct {
 		Conds []*Conditions
-		Errs  []*Error
-	}{Conds: conds, Errs: errs}
+		Head  template.HTML
+	}{Conds: conds, Head: head}
 	err := tmpl.Execute(w, data)
-	mu.Unlock()
 	if err != nil {
 		log.Printf("Failed to execute template. %v", err)
 	}
