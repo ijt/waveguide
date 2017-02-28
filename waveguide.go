@@ -15,9 +15,11 @@ import (
 
 var addr = flag.String("addr", ":4089", "Server address")
 var timeout = flag.Duration("timeout", 5*time.Second, "Timeout for HTTP GETs")
+var conditionsInterval = flag.Duration("conditions_interval", 10*time.Minute, "Interval between updating conditions")
 
 func main() {
 	http.HandleFunc("/", handleRoot)
+	go KeepConditionsUpdated()
 	log.Printf("Listending on %s", *addr)
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
@@ -122,9 +124,23 @@ var locations = []Location{
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
-	client := &http.Client{Timeout: *timeout}
+	// Render the results.
+	mu.Lock()
+	data := struct {
+		Conds []*Conditions
+		Errs  []*Error
+	}{Conds: conds, Errs: errs}
+	err := tmpl.Execute(w, data)
+	mu.Unlock()
+	if err != nil {
+		log.Printf("Failed to execute template. %v", err)
+	}
+}
 
+// TODO(ijt): Make this gentler on magicseaweed, not hitting all the pages at the same time.
+func UpdateConditionsAllLocations() {
 	// Spawn requests to get the conditions.
+	client := &http.Client{Timeout: *timeout}
 	ch := make(chan *ConditionsOrError)
 	var wg sync.WaitGroup
 	for _, loc := range locations {
@@ -152,29 +168,31 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// Gather conditions and errors.
-	conds := make([]*Conditions, 0, len(locations))
-	errs := make([]*Error, 0, len(locations))
+	mu.Lock()
+	conds = make([]*Conditions, 0, len(locations))
+	errs = make([]*Error, 0, len(locations))
+	mu.Unlock()
 	for coe := range ch {
 		if coe.Err != nil {
+			mu.Lock()
 			errs = append(errs, coe.Err)
+			mu.Unlock()
 			continue
 		}
+		mu.Lock()
 		conds = append(conds, coe.Cond)
+		mu.Unlock()
 	}
 
 	// Sort locations by rating and name.
+	mu.Lock()
 	sort.Sort(ByRating(conds))
-
-	// Render the results.
-	data := struct {
-		Conds []*Conditions
-		Errs  []*Error
-	}{Conds: conds, Errs: errs}
-	err := tmpl.Execute(w, data)
-	if err != nil {
-		log.Printf("Failed to execute template. %v", err)
-	}
+	mu.Unlock()
 }
+
+var mu sync.Mutex
+var conds []*Conditions
+var errs []*Error
 
 type ByRating []*Conditions
 
@@ -228,4 +246,13 @@ func (c *Conditions) Stars() string {
 		runes = append(runes, '☆')
 	}
 	return string(runes)
+}
+
+func KeepConditionsUpdated() {
+	UpdateConditionsAllLocations()
+	tick := time.Tick(*conditionsInterval)
+	for {
+		<-tick
+		UpdateConditionsAllLocations()
+	}
 }
