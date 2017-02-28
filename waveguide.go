@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -18,11 +20,14 @@ var addr = flag.String("addr", ":4089", "Server address")
 var timeout = flag.Duration("timeout", 5*time.Second, "Timeout for HTTP GETs")
 var conditionsInterval = flag.Duration("conditions_interval", 10*time.Minute, "Interval between updating conditions")
 var siteMapUrl = flag.String("site_map_url", "http://magicseaweed.com/site-map.php", "URL of the site map")
+var conditionsFilePath = flag.String("conditions_file", "conditions.json", "Path to file with conditions cache")
+var conditionsPeriod = flag.Duration("conditions_period", 10*time.Second, "How often to save the conditions file")
 
 func main() {
+	loadConditionsFile()
 	http.HandleFunc("/", handleRoot)
 	http.HandleFunc("/errors", handleErrors)
-	go KeepConditionsUpdated()
+	go keepConditionsUpdated()
 	log.Printf("Listending on %s", *addr)
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
@@ -124,7 +129,7 @@ func handleErrors(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
-	// Sort locations by rating and name.
+	// Sort conditions by rating and name.
 	mu.Lock()
 	defer mu.Unlock()
 	conds2 := make([]*Conditions, 0, len(conds))
@@ -144,7 +149,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func UpdateConditionsAllLocations() {
+func updateConditionsAllLocations() {
 	client := &http.Client{Timeout: *timeout}
 
 	// Gather locations.
@@ -159,25 +164,21 @@ func UpdateConditionsAllLocations() {
 		log.Printf("Failed to read response body of site map. %v", err)
 	}
 	reportMatches := reportRx.FindAllSubmatch(body, -1)
-	log.Printf("report matches: %s", reportMatches)
 	for _, match := range reportMatches {
 		path := strings.TrimSpace(string(match[1]))
 		name := strings.TrimSpace(string(match[2]))
-		loc, ok := locations[name]
-		if ok {
-			if loc.MagicSeaweedPath != path {
-				log.Printf("Updating path for %s from %s to %s", loc.Name, loc.MagicSeaweedPath, path)
-				loc.MagicSeaweedPath = path
-			}
-		} else {
-			loc := &Location{
-				Name:             name,
-				MagicSeaweedPath: path,
-			}
-			locations[name] = loc
-			log.Printf("Got new location: %+v", loc)
+		_, ok := locations[name]
+		if !ok {
+			log.Printf("Got new location: %s: %s", name, path)
 		}
+		loc := &Location{
+			Name:             name,
+			MagicSeaweedPath: path,
+		}
+		locations[name] = loc
 	}
+	log.Printf("Found %d reports", len(reportMatches))
+	log.Printf("New number of locations: %d", len(locations))
 
 	// Gather conditions and errors.
 	mu.Lock()
@@ -198,7 +199,41 @@ func UpdateConditionsAllLocations() {
 		mu.Lock()
 		conds[loc.Name] = cond
 		mu.Unlock()
+		saveConditionsFile()
 	}
+}
+
+func loadConditionsFile() {
+	f, err := os.Open(*conditionsFilePath)
+	if err != nil {
+		log.Printf("Failed to open conditions file %s. %v. That's okay.", *conditionsFilePath, err)
+		return
+	}
+	contents, err := ioutil.ReadAll(f)
+	err = json.Unmarshal(contents, &conds)
+	if err != nil {
+		log.Printf("Failed to unmarshall the conditions map. %v", err)
+		os.Exit(1)
+	}
+	log.Printf("Loaded conditions file %s", *conditionsFilePath)
+}
+
+func saveConditionsFile() {
+	f, err := os.Create(*conditionsFilePath)
+	if err != nil {
+		log.Printf("Failed to open conditions file %s for writing. %v", *conditionsFilePath)
+		return
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	contents, err := json.Marshal(conds)
+	if err != nil {
+		log.Printf("Failed to marshal conditions. %v", conds)
+		return
+	}
+	f.Write(contents)
+	f.Close()
+	log.Printf("Saved conditions file %s", *conditionsFilePath)
 }
 
 var locations = make(map[string]*Location)
@@ -261,11 +296,11 @@ func (c *Conditions) Stars() string {
 	return string(runes)
 }
 
-func KeepConditionsUpdated() {
-	UpdateConditionsAllLocations()
+func keepConditionsUpdated() {
+	updateConditionsAllLocations()
 	tick := time.Tick(*conditionsInterval)
 	for {
 		<-tick
-		UpdateConditionsAllLocations()
+		updateConditionsAllLocations()
 	}
 }
