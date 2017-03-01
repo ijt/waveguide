@@ -28,13 +28,14 @@ func TestForecastRx(t *testing.T) {
 		in   string
 		want []string
 	}{
-		{`<option value="/Manhattan-Beach-Surf-Report/281/"> Manhattan Beach </option>`, []string{"/Manhattan-Beach-Surf-Report/281/", "Manhattan Beach"}},
+		{`<option value="/Manhattan-Beach-Surf-Report/281/">Manhattan Beach</option>`, []string{"/Manhattan-Beach-Surf-Report/281/", "Manhattan Beach"}},
+		{`<a href="/Linda-Mar-Pacifica-Surf-Report/819/" style="color: #000000">Linda Mar / Pacifica</a>`, []string{"/Linda-Mar-Pacifica-Surf-Report/819/", "Linda Mar / Pacifica"}},
 	}
 
 	for _, c := range cases {
 		ssm := reportRx.FindStringSubmatch(c.in)
 		if len(ssm) != 3 {
-			t.Errorf("Got %d submatches, want 3", len(ssm))
+			t.Errorf("Got %d submatches for %s, want 3", len(ssm), c.in)
 			continue
 		}
 		if ssm[1] != c.want[0] || ssm[2] != c.want[1] {
