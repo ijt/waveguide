@@ -34,7 +34,7 @@ func main() {
 	http.HandleFunc("/", handleRoot)
 	http.HandleFunc("/errors", handleErrors)
 	go keepConditionsUpdated()
-	log.Printf("Listending on %s", *addr)
+	log.Printf("Listening on %s", *addr)
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
