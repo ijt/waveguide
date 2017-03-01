@@ -22,8 +22,14 @@ var conditionsInterval = flag.Duration("conditions_interval", 10*time.Minute, "I
 var siteMapUrl = flag.String("site_map_url", "http://magicseaweed.com/site-map.php", "URL of the site map")
 var conditionsFilePath = flag.String("conditions_file", "conditions.json", "Path to file with conditions cache")
 var conditionsPeriod = flag.Duration("conditions_period", 10*time.Second, "How often to save the conditions file")
+var help = flag.Bool("h", false, "Show help message")
 
 func main() {
+	flag.Parse()
+	if *help {
+		flag.Usage()
+		os.Exit(0)
+	}
 	loadConditionsFile()
 	http.HandleFunc("/", handleRoot)
 	http.HandleFunc("/errors", handleErrors)
