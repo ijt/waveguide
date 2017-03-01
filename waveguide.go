@@ -90,7 +90,7 @@ var tmpl = template.Must(template.New("main").Parse(`
 			<tbody>
 				{{range .Conds}}
 				<tr>
-					<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.Name}}</a></td>
+					<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.HTMLName}}</a></td>
 					<td>{{.Stars}}</td>
 					<td>{{.Details}}</td>
 				</tr>
@@ -105,6 +105,10 @@ var tmpl = template.Must(template.New("main").Parse(`
 type Location struct {
 	Name             string
 	MagicSeaweedPath string
+}
+
+func (loc *Location) HTMLName() template.HTML {
+	return template.HTML(loc.Name)
 }
 
 type Conditions struct {
@@ -172,7 +176,7 @@ func updateConditionsAllLocations() {
 	reportMatches := reportRx.FindAllSubmatch(body, -1)
 	for _, match := range reportMatches {
 		path := strings.TrimSpace(string(match[1]))
-		name := strings.TrimSpace(string(match[2]))
+		name := surfReportPathToName(path)
 		_, ok := locations[name]
 		if !ok {
 			log.Printf("Got new location: %s: %s", name, path)
@@ -207,6 +211,15 @@ func updateConditionsAllLocations() {
 		mu.Unlock()
 		saveConditionsFile()
 	}
+}
+
+var srpTailRx = regexp.MustCompile(`-Surf-Report/\d+/`)
+
+func surfReportPathToName(srp string) string {
+	s := srpTailRx.ReplaceAllString(srp, "")
+	s = s[1:]
+	s = strings.Replace(s, "-", " ", -1)
+	return s
 }
 
 func loadConditionsFile() {

@@ -43,3 +43,12 @@ func TestForecastRx(t *testing.T) {
 		}
 	}
 }
+
+func TestSurfReportPathToName(t *testing.T) {
+	path := "/Playa-Santa-Teresa-Surf-Report/914/"
+	want := "Playa Santa Teresa"
+	got := surfReportPathToName(path)
+	if got != want {
+		t.Errorf("Got %s, want %s", got, want)
+	}
+}
