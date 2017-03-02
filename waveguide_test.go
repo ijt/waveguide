@@ -41,10 +41,21 @@ func TestForecastRx(t *testing.T) {
 }
 
 func TestSurfReportPathToName(t *testing.T) {
-	path := "/Playa-Santa-Teresa-Surf-Report/914/"
-	want := "Playa Santa Teresa"
-	got := surfReportPathToName(path)
-	if got != want {
-		t.Errorf("Got %s, want %s", got, want)
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{"/Playa-Santa-Teresa-Surf-Report/914/", "Playa Santa Teresa"},
+		{"/ColA%26iexcl%3Bn-Surf-Report/3288/", "ColA¡n"},
+	}
+	for _, c := range cases {
+		got, err := surfReportPathToName(c.input)
+		if err != nil {
+			t.Errorf("Want no error, got %v", err)
+			continue
+		}
+		if got != c.want {
+			t.Errorf("Got %s, want %s", got, c.want)
+		}
 	}
 }

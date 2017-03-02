@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"sort"
@@ -67,7 +69,7 @@ var errsTmpl = template.Must(template.New("errs").Parse(`
 		<table>
 			{{range .Errs}}
 			<tr>
-				<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.Name}}</a></td>
+				<td><a href="http://magicseaweed.com{{.Loc.MagicSeaweedPath}}">{{.Loc.HTMLName}}</a></td>
 				<td>{{.Err}}</td>
 			</tr>
 			{{end}}
@@ -173,10 +175,14 @@ func updateConditionsAllLocations() {
 	if err != nil {
 		log.Printf("Failed to read response body of site map. %v", err)
 	}
-	reportMatches := reportRx.FindAllSubmatch(body, -1)
+	reportMatches := reportRx.FindAll(body, -1)
 	for _, match := range reportMatches {
-		path := strings.TrimSpace(string(match[1]))
-		name := surfReportPathToName(path)
+		path := string(match)
+		name, err := surfReportPathToName(path)
+		if err != nil {
+			log.Printf("Failed to convert surf report path to name. %v", err)
+			continue
+		}
 		_, ok := locations[name]
 		if !ok {
 			log.Printf("Got new location: %s: %s", name, path)
@@ -215,11 +221,16 @@ func updateConditionsAllLocations() {
 
 var srpTailRx = regexp.MustCompile(`-Surf-Report/\d+/`)
 
-func surfReportPathToName(srp string) string {
+func surfReportPathToName(srp string) (string, error) {
 	s := srpTailRx.ReplaceAllString(srp, "")
-	s = s[1:]
+	s, err := url.PathUnescape(s)
+	if err != nil {
+		return "", fmt.Errorf("Failed to unescape path in surfReportPathToName(%q). %v", srp, err)
+	}
+	s = html.UnescapeString(s)
+	s = s[1:] // Remove leading /
 	s = strings.Replace(s, "-", " ", -1)
-	return s
+	return s, nil
 }
 
 func loadConditionsFile() {
