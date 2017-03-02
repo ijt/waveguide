@@ -275,7 +275,7 @@ func (r ByRating) Less(i, j int) bool {
 
 var starRx = regexp.MustCompile(`<li class="active"> *<i class="glyphicon glyphicon-star"></i> *</li>`)
 var heightRx = regexp.MustCompile(`(\d+(?:-\d+)?)<small>ft`)
-var reportRx = regexp.MustCompile(`(?:<option value="|<a href=")(/[^"]+-Surf-Report/\d+/)"[^>]*>([^<]+)\s*(?:</option>|</a>)`)
+var reportRx = regexp.MustCompile(`/[^"/]+-Surf-Report/\d+/`)
 
 func (loc *Location) GetConditions(client *http.Client) (*Conditions, error) {
 	url := "http://magicseaweed.com" + loc.MagicSeaweedPath

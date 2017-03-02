@@ -25,21 +25,17 @@ func TestHeightRx(t *testing.T) {
 
 func TestForecastRx(t *testing.T) {
 	cases := []struct {
-		in   string
-		want []string
+		input string
+		want  string
 	}{
-		{`<option value="/Manhattan-Beach-Surf-Report/281/">Manhattan Beach</option>`, []string{"/Manhattan-Beach-Surf-Report/281/", "Manhattan Beach"}},
-		{`<a href="/Linda-Mar-Pacifica-Surf-Report/819/" style="color: #000000">Linda Mar / Pacifica</a>`, []string{"/Linda-Mar-Pacifica-Surf-Report/819/", "Linda Mar / Pacifica"}},
+		{`<option value="/Manhattan-Beach-Surf-Report/281/">Manhattan Beach</option>`, "/Manhattan-Beach-Surf-Report/281/"},
+		{`<a href="/Linda-Mar-Pacifica-Surf-Report/819/" style="color: #000000">Linda Mar / Pacifica</a>`, "/Linda-Mar-Pacifica-Surf-Report/819/"},
 	}
 
 	for _, c := range cases {
-		ssm := reportRx.FindStringSubmatch(c.in)
-		if len(ssm) != 3 {
-			t.Errorf("Got %d submatches for %s, want 3", len(ssm), c.in)
-			continue
-		}
-		if ssm[1] != c.want[0] || ssm[2] != c.want[1] {
-			t.Errorf("Got %v for rest of submatches, want %v", ssm[1:], c.want)
+		got := reportRx.FindString(c.input)
+		if got != c.want {
+			t.Errorf("Got %q for %q, want %q", got, c.input, c.want)
 		}
 	}
 }
