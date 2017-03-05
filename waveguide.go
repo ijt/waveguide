@@ -284,6 +284,7 @@ func (r ByRating) Less(i, j int) bool {
 	return ci.Rating > cj.Rating
 }
 
+var starSectionRx = regexp.MustCompile(`<ul class="rating rating-large clearfix">.*?</ul>`)
 var starRx = regexp.MustCompile(`<li class="active"> *<i class="glyphicon glyphicon-star"></i> *</li>`)
 var heightRx = regexp.MustCompile(`(\d+(?:-\d+)?)<small>ft`)
 var reportRx = regexp.MustCompile(`/[^"/]+-Surf-Report/\d+/`)
@@ -300,12 +301,11 @@ func (loc *Location) GetConditions(client *http.Client) (*Conditions, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read body. %v", err)
 	}
-	foundStars := starRx.FindAll(body, -1)
+	rating := countTopStars(body)
 	hMatch := heightRx.FindSubmatch(body)
 	if len(hMatch) != 2 {
 		return nil, fmt.Errorf("Wave height regex failed.")
 	}
-	rating := len(foundStars)
 	details := fmt.Sprintf("%s ft", hMatch[1])
 	cond := &Conditions{
 		Loc:     loc,
@@ -313,6 +313,13 @@ func (loc *Location) GetConditions(client *http.Client) (*Conditions, error) {
 		Details: details,
 	}
 	return cond, nil
+}
+
+// countTopStars returns the number of stars in the first rating section on the page.
+func countTopStars(body []byte) int {
+	starSection := starSectionRx.Find(body)
+	foundStars := starRx.FindAll(starSection, -1)
+	return len(foundStars)
 }
 
 func (c *Conditions) Stars() string {
