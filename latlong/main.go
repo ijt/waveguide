@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -22,11 +21,6 @@ var latlongFile = flag.String("-file", "latlong.json", "JSON file storing the re
 type Spot struct {
 	Name       string
 	ReportPath string // on magicseaweed
-}
-
-type Coordinates struct {
-	Lat  float64
-	Long float64
 }
 
 type SpotCoords struct {
@@ -51,23 +45,26 @@ func main() {
 		open(sc.Url())
 		searchForCoordinates(sc.Spot)
 
-		coordsStr, err := askf("\nEnter coordinates for %s, or empty to skip. For details see %s\n", sc.Name, sc.Url())
-		if len(strings.TrimSpace(coordsStr)) == 0 {
-			fmt.Println("Skipping.")
-			continue
+		for {
+			coordsStr, err := askf("\nEnter coordinates for %s, or empty to skip. For details see %s\n", sc.Name, sc.Url())
+			if len(strings.TrimSpace(coordsStr)) == 0 {
+				fmt.Println("Skipping.")
+				continue
+			}
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			coords, err := parseCoords(coordsStr)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			fmt.Printf("Got %.4f, %.4f\n", coords.Lat, coords.Long)
+			sc.Coords = coords
+			saveLatLongFile(spotsCoords)
+			break
 		}
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		coords, err := parseCoords(coordsStr)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		fmt.Printf("Got %.4f, %.4f\n", coords.Lat, coords.Long)
-		sc.Coords = coords
-		saveLatLongFile(spotsCoords)
 	}
 }
 
@@ -76,27 +73,6 @@ func askf(promptFmt string, args ...interface{}) (string, error) {
 	fmt.Printf(promptFmt, args...)
 	r := bufio.NewReader(os.Stdin)
 	return r.ReadString('\n')
-}
-
-// https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
-var decimalDegreesRx = regexp.MustCompile(`(\d+)\.(\d+)° N, (\d+)\.(\d+)° W`)
-
-func parseCoords(s string) (*Coordinates, error) {
-	sms := decimalDegreesRx.FindStringSubmatch(s)
-	if len(sms) < 5 {
-		return nil, fmt.Errorf("Failed to match input %q with regex %q", s, decimalDegreesRx)
-	}
-	latStr := fmt.Sprintf("%s.%s", sms[1], sms[2])
-	lat, err := strconv.ParseFloat(latStr, 32)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to parse latitude float %q found in %q. %v", latStr, s, err)
-	}
-	longStr := fmt.Sprintf("%s.%s", sms[3], sms[4])
-	long, err := strconv.ParseFloat(longStr, 32)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to parse longitude float %q found in %q. %v", longStr, s, err)
-	}
-	return &Coordinates{Lat: lat, Long: long}, nil
 }
 
 func (s Spot) Url() string {
