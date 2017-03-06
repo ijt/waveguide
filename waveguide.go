@@ -219,20 +219,6 @@ func updateConditionsAllLocations() {
 	}
 }
 
-var srpTailRx = regexp.MustCompile(`-Surf-Report/\d+/`)
-
-func surfReportPathToName(srp string) (string, error) {
-	s := srpTailRx.ReplaceAllString(srp, "")
-	s, err := url.PathUnescape(s)
-	if err != nil {
-		return "", fmt.Errorf("Failed to unescape path in surfReportPathToName(%q). %v", srp, err)
-	}
-	s = html.UnescapeString(s)
-	s = s[1:] // Remove leading /
-	s = strings.Replace(s, "-", " ", -1)
-	return s, nil
-}
-
 func loadConditionsFile() {
 	f, err := os.Open(*conditionsFilePath)
 	if err != nil {
@@ -288,6 +274,19 @@ var starSectionRx = regexp.MustCompile(`<ul class="rating rating-large clearfix"
 var starRx = regexp.MustCompile(`<li class="active"> *<i class="glyphicon glyphicon-star"></i> *</li>`)
 var heightRx = regexp.MustCompile(`(\d+(?:-\d+)?)<small>ft`)
 var reportRx = regexp.MustCompile(`/[^"/]+-Surf-Report/\d+/`)
+var srpTailRx = regexp.MustCompile(`-Surf-Report/\d+/`)
+
+func surfReportPathToName(srp string) (string, error) {
+	s := srpTailRx.ReplaceAllString(srp, "")
+	s, err := url.PathUnescape(s)
+	if err != nil {
+		return "", fmt.Errorf("Failed to unescape path in surfReportPathToName(%q). %v", srp, err)
+	}
+	s = html.UnescapeString(s)
+	s = s[1:] // Remove leading /
+	s = strings.Replace(s, "-", " ", -1)
+	return s, nil
+}
 
 func (loc *Location) GetConditions(client *http.Client) (*Conditions, error) {
 	url := "http://magicseaweed.com" + loc.MagicSeaweedPath
