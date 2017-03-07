@@ -48,7 +48,9 @@ func main() {
 
 		// Show the user info to help get the coordinates.
 		open(sc.Url())
+		open(sc.GuideUrl())
 		searchForCoordinates(sc.Spot)
+		showMapForName(sc.Spot.Name)
 
 		for {
 			coordsStr, err := askf("\nEnter coordinates for %s, or empty to skip. For details see %s\n", sc.Name, sc.Url())
@@ -131,6 +133,11 @@ func askf(promptFmt string, args ...interface{}) (string, error) {
 
 func (s Spot) Url() string {
 	return fmt.Sprintf("http://magicseaweed.com/%s", s.ReportPath)
+}
+
+func (s Spot) GuideUrl() string {
+	guidePath := strings.Replace(s.ReportPath, "Report", "Guide", -1)
+	return fmt.Sprintf("http://magicseaweed.com/%s", guidePath)
 }
 
 func searchForCoordinates(s Spot) {
@@ -224,6 +231,11 @@ func surfReportPathToName(srp string) (string, error) {
 
 func showMap(lat float32, long float32, zoom int) {
 	url := fmt.Sprintf("https://www.google.com/maps/@%f,%f,%dz", lat, long, zoom)
+	open(url)
+}
+
+func showMapForName(name string) {
+	url := fmt.Sprintf("https://www.google.com/maps/place/%s", name)
 	open(url)
 }
 
