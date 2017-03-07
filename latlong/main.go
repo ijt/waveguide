@@ -52,6 +52,7 @@ func main() {
 		searchForCoordinates(sc.Spot)
 		showMapForName(sc.Spot.Name)
 
+		coordLoop:
 		for {
 			coordsStr, err := askf("\nEnter coordinates for %s, or empty to skip. For details see %s\n", sc.Name, sc.Url())
 			if len(strings.TrimSpace(coordsStr)) == 0 {
