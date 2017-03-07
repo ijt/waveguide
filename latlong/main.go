@@ -142,8 +142,6 @@ func (s Spot) GuideUrl() string {
 }
 
 func searchForCoordinates(s Spot) {
-	// TODO: Bring in more context from the msw surf report page.
-	// For example, it could be the Santa Cruz in Portugal.
 	url := fmt.Sprintf("https://www.google.com/search?q=%s coordinates", s.Name)
 	open(url)
 }
