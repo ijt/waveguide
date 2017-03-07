@@ -185,7 +185,7 @@ func addSpotsFromMswSiteMap(spotsCoords []*SpotCoords) []*SpotCoords {
 		log.Fatalf("Failed to read body of response for site map. %v", err)
 	}
 	srPaths := reportRx.FindAll(contents, -1)
-	fmt.Printf("Got %d paths from site map.\n", len(srPaths))
+	log.Printf("Got %d paths from site map.\n", len(srPaths))
 	for _, path := range srPaths {
 		sPath := string(path)
 		name, err := surfReportPathToName(sPath)
