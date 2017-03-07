@@ -162,7 +162,7 @@ func loadLatLongFile() (spotsCoords []*SpotCoords) {
 }
 
 func saveLatLongFile(spotsCoords []*SpotCoords) {
-	contents, err := json.Marshal(&spotsCoords)
+	contents, err := json.MarshalIndent(&spotsCoords, "", "    ")
 	if err != nil {
 		log.Fatalf("Failed to encode data to json. %v", err)
 	}
