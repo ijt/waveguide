@@ -31,8 +31,9 @@ type SpotCoords struct {
 
 func main() {
 	spotsCoords := loadLatLongFile()
-	spotsCoords = addSpotsFromMswSiteMap(spotsCoords)
-	spotsCoords, err := orderByStarsOnWaveguide(spotsCoords)
+	rp2sc := getReportPathToSc(spotsCoords)
+	spotsCoords = addSpotsFromMswSiteMap(spotsCoords, rp2sc)
+	spotsCoords, err := orderByStarsOnWaveguide(spotsCoords, rp2sc)
 	if err != nil {
 		log.Printf("Failed to order by stars on Waveguide. %v", err)
 	}
@@ -50,7 +51,6 @@ func main() {
 		open(sc.Url())
 		open(sc.GuideUrl())
 		searchForCoordinates(sc.Spot)
-		showMapForName(sc.Spot.Name)
 
 		coordLoop:
 		for {
@@ -88,15 +88,8 @@ func main() {
 	}
 }
 
-func orderByStarsOnWaveguide(spotsCoords []*SpotCoords) ([]*SpotCoords, error) {
+func orderByStarsOnWaveguide(spotsCoords []*SpotCoords, rp2sc map[string]*SpotCoords) ([]*SpotCoords, error) {
 	log.Printf("Ordering by stars on waveguide.")
-
-	// Map from report path to SpotCoords
-	rp2sc := make(map[string]*SpotCoords)
-	for _, sc := range spotsCoords {
-		rp2sc[sc.ReportPath] = sc
-	}
-
 	reportPaths, err := getReportPathsFromWaveguide()
 	if err != nil {
 		return spotsCoords, fmt.Errorf("Failed to get report paths from waveguide. %v", err)
@@ -108,6 +101,18 @@ func orderByStarsOnWaveguide(spotsCoords []*SpotCoords) ([]*SpotCoords, error) {
 		sc2 = append(sc2, rp2sc[rp])
 	}
 	return sc2, nil
+}
+
+// getReportPathToSc makes a map from report path to SpotCoords
+func getReportPathToSc(spotsCoords []*SpotCoords) map[string]*SpotCoords {
+	rp2sc := make(map[string]*SpotCoords)
+	for _, sc := range spotsCoords {
+		if sc == nil {
+			continue
+		}
+		rp2sc[sc.ReportPath] = sc
+	}
+	return rp2sc
 }
 
 func getReportPathsFromWaveguide() ([]string, error) {
@@ -171,7 +176,7 @@ func saveLatLongFile(spotsCoords []*SpotCoords) {
 	log.Println("Wrote", *latlongFile)
 }
 
-func addSpotsFromMswSiteMap(spotsCoords []*SpotCoords) []*SpotCoords {
+func addSpotsFromMswSiteMap(spotsCoords []*SpotCoords, rp2sc map[string]*SpotCoords) []*SpotCoords {
 	// Grab the beach names and urls from the msw sitemap.
 	resp, err := http.Get("http://magicseaweed.com/site-map.php")
 	if err != nil {
@@ -191,14 +196,7 @@ func addSpotsFromMswSiteMap(spotsCoords []*SpotCoords) []*SpotCoords {
 			log.Println(err)
 			continue
 		}
-
-		found := false
-		for _, sc := range spotsCoords {
-			if sc.ReportPath == sPath {
-				found = true
-			}
-		}
-
+		_, found := rp2sc[sPath]
 		if !found {
 			sc := &SpotCoords{
 				Spot: Spot{
