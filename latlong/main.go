@@ -16,7 +16,8 @@ import (
 	"strings"
 )
 
-var latlongFile = flag.String("-file", "latlong.json", "JSON file storing the results")
+var latlongFile = flag.String("file", "latlong.json", "JSON file storing the results")
+var waveguideUrl = flag.String("waveguide", "http://104.198.243.193", "URL for waveguide")
 
 type Spot struct {
 	Name       string
@@ -31,6 +32,10 @@ type SpotCoords struct {
 func main() {
 	spotsCoords := loadLatLongFile()
 	spotsCoords = addSpotsFromMswSiteMap(spotsCoords)
+	spotsCoords, err := orderByStarsOnWaveguide(spotsCoords)
+	if err != nil {
+		log.Printf("Failed to order by stars on Waveguide. %v", err)
+	}
 	saveLatLongFile(spotsCoords)
 
 	// For each Spot without coordinates
@@ -60,12 +65,61 @@ func main() {
 				fmt.Println(err)
 				continue
 			}
-			fmt.Printf("Got %.4f, %.4f\n", coords.Lat, coords.Long)
-			sc.Coords = coords
-			saveLatLongFile(spotsCoords)
-			break
+			yn, err := askf("Got %.4f, %.4f. OK (y/n/s)\n", coords.Lat, coords.Long)
+			if err != nil {
+				log.Fatal(err)
+			}
+			switch strings.ToLower(yn)[0] {
+			case 's':
+				fmt.Println("Skipping.\n")
+				break coordLoop
+			case 'n':
+				fmt.Println("Trying again.\n")
+				continue coordLoop
+			default:
+				sc.Coords = coords
+				saveLatLongFile(spotsCoords)
+				break coordLoop
+			}
 		}
 	}
+}
+
+func orderByStarsOnWaveguide(spotsCoords []*SpotCoords) ([]*SpotCoords, error) {
+	log.Printf("Ordering by stars on waveguide.")
+
+	// Map from report path to SpotCoords
+	rp2sc := make(map[string]*SpotCoords)
+	for _, sc := range spotsCoords {
+		rp2sc[sc.ReportPath] = sc
+	}
+
+	reportPaths, err := getReportPathsFromWaveguide()
+	if err != nil {
+		return spotsCoords, fmt.Errorf("Failed to get report paths from waveguide. %v", err)
+	}
+
+	// Make a new version of spot coords with the given order
+	sc2 := make([]*SpotCoords, 0, len(spotsCoords))
+	for _, rp := range reportPaths {
+		sc2 = append(sc2, rp2sc[rp])
+	}
+	return sc2, nil
+}
+
+func getReportPathsFromWaveguide() ([]string, error) {
+	resp, err := http.Get(*waveguideUrl)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read body of %s. %v", *waveguideUrl, err)
+	}
+	body := string(bodyBytes)
+	reportPaths := reportRx.FindAllString(body, -1)
+	return reportPaths, nil
 }
 
 // askf asks the user to input something in the terminal.
