@@ -47,7 +47,9 @@ func root(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 	}
 	q := datastore.NewQuery("Spot")
 	var spots []Spot
+	log.Infof(ctx, "root: Before GetAll")
 	_, err := q.GetAll(ctx, &spots)
+	log.Infof(ctx, "root: After GetAll")
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf( "root: fetching spots: %v", err)
 	}
