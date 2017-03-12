@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 	"google.golang.org/appengine/urlfetch"
+	"strconv"
+	"html/template"
 )
 
 func init() {
@@ -38,19 +40,45 @@ func handle(f func(ctx context.Context, w http.ResponseWriter, r *http.Request) 
 }
 
 // root shows the main page.
-func root(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
-	fmt.Fprintf(w, "Waveguide")
+func root(ctx context.Context, w http.ResponseWriter, _ *http.Request) (int, error) {
+	q := datastore.NewQuery("Spot")
+	var spots []Spot
+	_, err := q.GetAll(ctx, &spots)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf( "root: fetching spots: %v", err)
+	}
+	data := struct {
+		Head template.HTML
+		Spots []Spot
+	} {
+		Head: head,
+		Spots: spots,
+	}
+	log.Infof(ctx, "root: spots: %+v", spots)
+	err = rootTmpl.Execute(w, data)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("root: template: %v", err)
+	}
 	return http.StatusOK, nil
 }
 
 func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
+	if err := r.ParseForm(); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	sn := r.FormValue("n")
+	if sn == "" {
+		sn = "-1"
+	}
+	n, err := strconv.Atoi(sn)
+
 	// Download magicseaweed.com/site-map.php
 	client := urlfetch.Client(ctx)
 	body, err := get(client,"http://magicseaweed.com/site-map.php")
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	reportPaths := reportRx.FindAll(body, -1)
+	reportPaths := reportRx.FindAll(body, n)
 
 	// For each report url:
 	for _, rp := range reportPaths {
@@ -95,6 +123,7 @@ func updateOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 		return http.StatusInternalServerError, err
 	}
 	AddQualityToSpot(ctx, SpotKey(ctx, path), qual)
+	w.Write([]byte("ok"))
 	return http.StatusOK, nil
 }
 
