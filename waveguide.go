@@ -115,20 +115,6 @@ var heightRx = regexp.MustCompile(`(\d+(?:-\d+)?)<small>ft`)
 var reportRx = regexp.MustCompile(`/[^"/]+-Surf-Report/\d+/`)
 var srpTailRx = regexp.MustCompile(`-Surf-Report/\d+/`)
 
-type Spot struct {
-	Name 		 string
-	MswPath		 string
-	// Surf conditions at this spot, most recent last
-	Qual		 []Quality
-}
-
-type Quality struct {
-	// How many stars out of five
-	Rating int
-	WaveHeight string
-	Time time.Time
-}
-
 func surfReportPathToName(srp string) (string, error) {
 	s := srpTailRx.ReplaceAllString(srp, "")
 	// TODO: Use PathUnescape once GAE supports Go 1.8
@@ -148,10 +134,10 @@ func saveNewSurfReportPath(ctx context.Context, path []byte) error {
 	if err != nil {
 		return fmt.Errorf("saveNewSurfReportPaths: %v", err)
 	}
-	loc := Spot{Name: name, MswPath: sp}
-	key := datastore.NewKey(ctx, "Spot", string(sp), 0, nil)
+	s := Spot{Name: name, MswPath: sp}
+	key := SpotKey(ctx, sp)
 	// TODO: First check whether there is already something at this key.
-	_, err = datastore.Put(ctx, key, &loc)
+	_, err = datastore.Put(ctx, key, &s)
 	if err != nil {
 		return fmt.Errorf("saveNewSurfReportPaths: %v", err)
 	}
@@ -176,7 +162,7 @@ func fetchQuality(ctx context.Context, url string) (*Quality, error) {
 	q := &Quality {
 		Rating: rating,
 		WaveHeight: height,
-		Time: time.Now(),
+		TimeUnix: time.Now().Unix(),
 	}
 	return q, nil
 }
