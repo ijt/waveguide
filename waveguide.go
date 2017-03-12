@@ -68,6 +68,7 @@ func root(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 	return http.StatusOK, nil
 }
 
+// updateAll fetches the site map from msw, saves Spots based on it, and adds tasks to update all the Spots.
 func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
 	if err := r.ParseForm(); err != nil {
 		return http.StatusInternalServerError, err
@@ -133,6 +134,7 @@ func updateOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 	return http.StatusOK, nil
 }
 
+// show shows the data for a single spot given its url, for debugging.
 func show(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
 	if err := r.ParseForm(); err != nil {
 		return http.StatusInternalServerError, err
