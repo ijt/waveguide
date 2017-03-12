@@ -191,9 +191,14 @@ func saveNewSurfReportPath(ctx context.Context, path []byte) error {
 	if err != nil {
 		return fmt.Errorf("saveNewSurfReportPaths: %v", err)
 	}
-	s := Spot{Name: name, MswPath: sp}
+	var s Spot
 	key := SpotKey(ctx, sp)
-	// TODO: First check whether there is already something at this key.
+	err = datastore.Get(ctx, key, &s)
+	if err == nil {
+		// This Spot is already in datastore.
+		return nil
+	}
+	s = Spot{Name: name, MswPath: sp}
 	_, err = datastore.Put(ctx, key, &s)
 	if err != nil {
 		return fmt.Errorf("saveNewSurfReportPaths: %v", err)
