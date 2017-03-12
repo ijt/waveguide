@@ -1,27 +1,27 @@
 package waveguide
 
 import (
-	"google.golang.org/appengine/datastore"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
 	"html/template"
-	"time"
 	"regexp"
+	"time"
 )
 
 type Spot struct {
-	Name 		 string
+	Name string
 	// TODO: Change to using a general url to be less coupled
 	// to a particular site.
-	MswPath		 string
+	MswPath string
 	// Surf conditions at this spot, most recent last
-	Qual		 []Quality
+	Qual []Quality
 }
 
 type Quality struct {
 	// How many stars out of five
-	Rating int
+	Rating     int
 	WaveHeight string
-	TimeUnix int64
+	TimeUnix   int64
 }
 
 func SpotKey(ctx context.Context, mswPath string) *datastore.Key {
@@ -34,7 +34,6 @@ func AddQualityToSpot(ctx context.Context, key *datastore.Key, qual *Quality) er
 	if err != nil {
 		return err
 	}
-	// TODO: limit how many qualities we add to a spot.
 	s.Qual = append(s.Qual, *qual)
 	for len(s.Qual) > maxQualitiesPerSpot {
 		drop := len(s.Qual) - maxQualitiesPerSpot
