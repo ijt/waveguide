@@ -5,8 +5,8 @@ import (
 	"google.golang.org/appengine/datastore"
 	"html/template"
 	"regexp"
-	"time"
 	"strings"
+	"time"
 )
 
 type Spot struct {

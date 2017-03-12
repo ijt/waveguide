@@ -1,24 +1,24 @@
 package waveguide
 
 import (
+	"fmt"
+	"html"
+	"html/template"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/taskqueue"
-	"fmt"
-	"io/ioutil"
-	"regexp"
-	"html"
-	"strings"
-	"time"
 	"google.golang.org/appengine/urlfetch"
-	"strconv"
-	"html/template"
-	"sort"
 )
 
 func init() {
@@ -51,14 +51,14 @@ func root(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 	_, err := q.GetAll(ctx, &spots)
 	log.Infof(ctx, "root: After GetAll")
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf( "root: fetching spots: %v", err)
+		return http.StatusInternalServerError, fmt.Errorf("root: fetching spots: %v", err)
 	}
 	sort.Sort(ByRating(spots))
 	data := struct {
-		Head template.HTML
+		Head  template.HTML
 		Spots []Spot
-	} {
-		Head: head,
+	}{
+		Head:  head,
 		Spots: spots,
 	}
 	err = rootTmpl.Execute(w, data)
@@ -81,7 +81,7 @@ func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 
 	// Download magicseaweed.com/site-map.php
 	client := urlfetch.Client(ctx)
-	body, err := get(client,"http://magicseaweed.com/site-map.php")
+	body, err := get(client, "http://magicseaweed.com/site-map.php")
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -105,7 +105,7 @@ func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 		}
 	}
 
-	fmt.Fprintf(w,"Processed %d paths.", len(reportPaths))
+	fmt.Fprintf(w, "Processed %d paths.", len(reportPaths))
 
 	return http.StatusOK, nil
 }
@@ -221,10 +221,10 @@ func fetchSpotQuality(ctx context.Context, url string) (*Quality, error) {
 		return nil, fmt.Errorf("Wave height regex failed.")
 	}
 	height := fmt.Sprintf("%s ft", hMatch[1])
-	q := &Quality {
-		Rating: rating,
+	q := &Quality{
+		Rating:     rating,
 		WaveHeight: height,
-		TimeUnix: time.Now().Unix(),
+		TimeUnix:   time.Now().Unix(),
 	}
 	return q, nil
 }
