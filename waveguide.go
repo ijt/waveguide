@@ -89,8 +89,6 @@ func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 
 	// For each report url:
 	for _, rp := range reportPaths {
-		// TODO: See about using PutMulti if this needs to be more
-		// efficient.
 		err = saveNewSurfReportPath(ctx, rp)
 		if err != nil {
 			return http.StatusInternalServerError, err
