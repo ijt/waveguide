@@ -61,7 +61,6 @@ func root(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 		Head: head,
 		Spots: spots,
 	}
-	log.Infof(ctx, "root: spots: %+v", spots)
 	err = rootTmpl.Execute(w, data)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("root: template: %v", err)
