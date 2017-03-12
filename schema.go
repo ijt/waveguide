@@ -69,12 +69,34 @@ func (q *Quality) Stars() string {
 	return string(runes)
 }
 
-var dotNumRx = regexp.MustCompile(`\.\d+`)
+var dotNumRx = regexp.MustCompile(`([a-z]).*`)
 
 // HowLong returns a string telling how long it has been since the time given by its TimeUnix field.
 func (q *Quality) HowLong() string {
 	t := time.Unix(q.TimeUnix, 0)
 	dt := time.Now().Sub(t)
 	s := dt.String()
-	return dotNumRx.ReplaceAllString(s, "")
+	return dotNumRx.ReplaceAllString(s, "$1")
+}
+
+type ByRating []Spot
+
+func (r ByRating) Len() int      { return len(r) }
+func (r ByRating) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
+func (r ByRating) Less(i, j int) bool {
+	qi := r[i].LatestQuality()
+	qj := r[j].LatestQuality()
+	if qi == nil {
+		if qj == nil {
+			return true
+		} else {
+			return false
+		}
+	} else {
+		if qj == nil {
+			return true
+		} else {
+			return qi.Rating > qj.Rating
+		}
+	}
 }

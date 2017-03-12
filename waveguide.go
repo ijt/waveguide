@@ -18,6 +18,7 @@ import (
 	"google.golang.org/appengine/urlfetch"
 	"strconv"
 	"html/template"
+	"sort"
 )
 
 func init() {
@@ -47,6 +48,7 @@ func root(ctx context.Context, w http.ResponseWriter, _ *http.Request) (int, err
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf( "root: fetching spots: %v", err)
 	}
+	sort.Sort(ByRating(spots))
 	data := struct {
 		Head template.HTML
 		Spots []Spot
