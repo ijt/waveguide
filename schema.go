@@ -7,6 +7,8 @@ import (
 
 type Spot struct {
 	Name 		 string
+	// TODO: Change to using a general url to be less coupled
+	// to a particular site.
 	MswPath		 string
 	// Surf conditions at this spot, most recent last
 	Qual		 []Quality
