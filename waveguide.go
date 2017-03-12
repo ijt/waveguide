@@ -26,6 +26,7 @@ func init() {
 	http.HandleFunc("/update_all", handle(updateAll))
 	http.HandleFunc("/update_one", handle(updateOne))
 	http.HandleFunc("/show", handle(show))
+	http.HandleFunc("/clear", handle(clear))
 }
 
 func handle(f func(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error)) func(http.ResponseWriter, *http.Request) {
@@ -70,6 +71,7 @@ func root(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 
 // updateAll fetches the site map from msw, saves Spots based on it, and adds tasks to update all the Spots.
 func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
+	// Get form arg n: number of spots to update, or -1 for all of them
 	if err := r.ParseForm(); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -89,11 +91,6 @@ func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 
 	// For each report url:
 	for _, rp := range reportPaths {
-		err = saveNewSurfReportPath(ctx, rp)
-		if err != nil {
-			return http.StatusInternalServerError, err
-		}
-
 		// Add a task to the queue to download the report and store its stars and wave
 		// height to the db.
 		srp := string(rp)
@@ -105,8 +102,8 @@ func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 		}
 	}
 
-	fmt.Fprintf(w, "Processed %d paths.", len(reportPaths))
-
+	fmt.Fprintf(w, "Processed %d paths.\n", len(reportPaths))
+	fmt.Fprintf(w, "ok")
 	return http.StatusOK, nil
 }
 
@@ -127,7 +124,7 @@ func updateOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	AddQualityToSpot(ctx, SpotKey(ctx, path), qual)
+	AddQualityToSpot(ctx, path, qual)
 	w.Write([]byte("ok"))
 	return http.StatusOK, nil
 }
@@ -150,6 +147,27 @@ func show(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 		return http.StatusInternalServerError, err
 	}
 	fmt.Fprintf(w, "%+v", s)
+	return http.StatusOK, nil
+}
+
+func clear(ctx context.Context, w http.ResponseWriter, _ *http.Request) (int, error) {
+	// TODO: This may time out. Rewrite it to queue up a bunch of tasks to delete individual spots or batches of
+	// them.
+	q := datastore.NewQuery("Spot")
+	var spots []Spot
+	_, err := q.GetAll(ctx, &spots)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	keys := make([]*datastore.Key, len(spots))
+	for i, s := range spots {
+		keys[i] = SpotKey(ctx, s.MswPath)
+	}
+	err = datastore.DeleteMulti(ctx, keys)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	fmt.Fprintf(w, "ok")
 	return http.StatusOK, nil
 }
 
@@ -183,27 +201,6 @@ func surfReportPathToName(srp string) (string, error) {
 	s = s[1:] // Remove leading /
 	s = strings.Replace(s, "-", " ", -1)
 	return s, nil
-}
-
-func saveNewSurfReportPath(ctx context.Context, path []byte) error {
-	sp := string(path)
-	name, err := surfReportPathToName(sp)
-	if err != nil {
-		return fmt.Errorf("saveNewSurfReportPaths: %v", err)
-	}
-	var s Spot
-	key := SpotKey(ctx, sp)
-	err = datastore.Get(ctx, key, &s)
-	if err == nil {
-		// This Spot is already in datastore.
-		return nil
-	}
-	s = Spot{Name: name, MswPath: sp}
-	_, err = datastore.Put(ctx, key, &s)
-	if err != nil {
-		return fmt.Errorf("saveNewSurfReportPaths: %v", err)
-	}
-	return nil
 }
 
 // fetchSpotQuality scrapes the surf report at the given url and returns a Quality struct

@@ -1,12 +1,14 @@
 package waveguide
 
 import (
-	"golang.org/x/net/context"
-	"google.golang.org/appengine/datastore"
+	"fmt"
 	"html/template"
 	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
 )
 
 type Spot struct {
@@ -29,10 +31,21 @@ func SpotKey(ctx context.Context, mswPath string) *datastore.Key {
 	return datastore.NewKey(ctx, "Spot", mswPath, 0, nil)
 }
 
-func AddQualityToSpot(ctx context.Context, key *datastore.Key, qual *Quality) error {
+// AddQualityToSpot adds a surfing condition quality to the spot with the given surf report path.
+// If there is no such spot in datastore, AddQualityToSpot creates one.
+func AddQualityToSpot(ctx context.Context, path string, qual *Quality) error {
 	var s Spot
+	key := SpotKey(ctx, path)
 	err := datastore.Get(ctx, key, &s)
-	if err != nil {
+	if err == datastore.ErrNoSuchEntity {
+		// This spot isn't yet in the db. That's okay, we'll just fill in the blanks and add it with the
+		// quality.
+		s.Name, err = surfReportPathToName(path)
+		if err != nil {
+			return fmt.Errorf("AddQualityToSpot: %v", err)
+		}
+		s.MswPath = path
+	} else if err != nil {
 		return err
 	}
 	s.Qual = append(s.Qual, *qual)
