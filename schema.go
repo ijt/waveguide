@@ -77,14 +77,17 @@ func (q *Quality) Stars() string {
 	return string(runes)
 }
 
-var dotNumRx = regexp.MustCompile(`([a-z]).*`)
+var firstAlphaRx = regexp.MustCompile(`([a-z]+).*`)
+var decimalRx = regexp.MustCompile(`\.\d+`)
 
 // HowLong returns a string telling how long it has been since the time given by its TimeUnix field.
 func (q *Quality) HowLong() string {
 	t := time.Unix(q.TimeUnix, 0)
 	dt := time.Now().Sub(t)
 	s := dt.String()
-	return dotNumRx.ReplaceAllString(s, "$1")
+	s = firstAlphaRx.ReplaceAllString(s, "$1")
+	s = decimalRx.ReplaceAllString(s, "")
+	return s
 }
 
 type ByRating []Spot
