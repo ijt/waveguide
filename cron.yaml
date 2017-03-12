@@ -1,5 +1,4 @@
 cron:
 - description: update
   url: /update_all
-  target: beta
   schedule: every 1 hours
