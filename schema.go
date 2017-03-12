@@ -24,3 +24,17 @@ type Quality struct {
 func SpotKey(ctx context.Context, mswPath string) *datastore.Key {
 	return datastore.NewKey(ctx, "Spot", mswPath, 0, nil)
 }
+
+func AddQualityToSpot(ctx context.Context, key *datastore.Key, qual *Quality) error {
+	var s Spot
+	err := datastore.Get(ctx, key, &s)
+	if err != nil {
+		return err
+	}
+	s.Qual = append(s.Qual, *qual)
+	_, err = datastore.Put(ctx, key, &s)
+	if err != nil {
+		return err
+	}
+	return nil
+}

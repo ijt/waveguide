@@ -22,6 +22,7 @@ func init() {
 	http.HandleFunc("/", handle(root))
 	http.HandleFunc("/update_all", handle(updateAll))
 	http.HandleFunc("/update_one", handle(updateOne))
+	http.HandleFunc("/show", handle(show))
 }
 
 func handle(f func(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error)) func(http.ResponseWriter, *http.Request) {
@@ -63,7 +64,8 @@ func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 		// Add a task to the queue to download the report and store its stars and wave
 		// height to the db.
 		srp := string(rp)
-		t := taskqueue.NewPOSTTask("/update_one", map[string][]string{"path": {srp}})
+		su := "http://magicseaweed.com" + srp
+		t := taskqueue.NewPOSTTask("/update_one", map[string][]string{"url": {su}})
 		if _, err := taskqueue.Add(ctx, t, ""); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return http.StatusInternalServerError, err
@@ -75,24 +77,44 @@ func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 	return http.StatusOK, nil
 }
 
-// updateOne updates the conditions for a single surfing spot.
+// updateOne updates the conditions for a single surfing spot, given the
+// path to the surf report for it.
 func updateOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
-	path := r.FormValue("path")
-	log.Infof(ctx, "updateOne: path=%q", path)
-	key := datastore.NewKey(ctx, "Spot", path, 0, nil)
-	var s Spot
-	if err := datastore.Get(ctx, key, &s); err == datastore.ErrNoSuchEntity {
-		url := "http://magicseaweed.com" + s.MswPath
-		q, err := fetchQuality(ctx, url)
-		if err != nil {
-			return http.StatusInternalServerError, err
-		}
-		s.Qual = append(s.Qual, *q)
-		_, err = datastore.Put(ctx, key, &s)
-		if err != nil {
-			return http.StatusInternalServerError, err
-		}
+	if err := r.ParseForm(); err != nil {
+		return http.StatusInternalServerError, err
 	}
+	su := r.FormValue("url")
+	log.Infof(ctx, "/update_one: url=%q", su)
+	u, err := url.Parse(su)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+	path := u.Path
+	qual, err := fetchSpotQuality(ctx, su)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	AddQualityToSpot(ctx, SpotKey(ctx, path), qual)
+	return http.StatusOK, nil
+}
+
+func show(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
+	if err := r.ParseForm(); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	log.Infof(ctx, "/show. form: %v", r.Form)
+	su := r.FormValue("url")
+	u, err := url.Parse(su)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+	path := u.Path
+	key := SpotKey(ctx, path)
+	var s Spot
+	if err := datastore.Get(ctx, key, &s); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	fmt.Fprintf(w, "%+v", s)
 	return http.StatusOK, nil
 }
 
@@ -144,9 +166,9 @@ func saveNewSurfReportPath(ctx context.Context, path []byte) error {
 	return nil
 }
 
-// fetchQuality scrapes the surf report at the given url and returns a Quality struct
+// fetchSpotQuality scrapes the surf report at the given url and returns a Quality struct
 // summarizing the conditions.
-func fetchQuality(ctx context.Context, url string) (*Quality, error) {
+func fetchSpotQuality(ctx context.Context, url string) (*Quality, error) {
 	log.Infof(ctx, "Fetching %s", url)
 	client := urlfetch.Client(ctx)
 	body, err := get(client, url)
