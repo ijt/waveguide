@@ -36,6 +36,10 @@ func AddQualityToSpot(ctx context.Context, key *datastore.Key, qual *Quality) er
 	}
 	// TODO: limit how many qualities we add to a spot.
 	s.Qual = append(s.Qual, *qual)
+	for len(s.Qual) > maxQualitiesPerSpot {
+		drop := len(s.Qual) - maxQualitiesPerSpot
+		s.Qual = s.Qual[drop:len(s.Qual)]
+	}
 	_, err = datastore.Put(ctx, key, &s)
 	if err != nil {
 		return err
