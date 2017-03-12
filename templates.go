@@ -37,10 +37,10 @@ var rootTmpl = template.Must(template.New("root").Parse(`
                         <tbody>
                                 {{range .Spots}}
 					<tr>
-						<td><a href="http://magicseaweed.com{{.MswPath}}">{{.HTMLName}}</a></td>
+						<td><a href="{{.MapURL}}">{{.HTMLName}}</a></td>
 						{{if .LatestQuality}}
 							{{ $q := .LatestQuality }}
-							<td>{{$q.Stars}}</td>
+							<td><a href="{{.ReportURL}}">{{$q.Stars}}</a></td>
 							<td>{{$q.WaveHeight}}</td>
 							<td>{{$q.HowLong}} ago</td>
 						{{end}}
@@ -51,4 +51,3 @@ var rootTmpl = template.Must(template.New("root").Parse(`
         </body>
 </html>
 `))
-

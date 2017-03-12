@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"regexp"
 	"time"
+	"strings"
 )
 
 type Spot struct {
@@ -55,6 +56,14 @@ func (s *Spot) LatestQuality() *Quality {
 		return nil
 	}
 	return &s.Qual[len(s.Qual)-1]
+}
+
+func (s *Spot) ReportURL() string {
+	return "http://magicseaweed.com" + s.MswPath
+}
+
+func (s *Spot) MapURL() string {
+	return strings.Replace(s.ReportURL(), "Report", "Guide", 1)
 }
 
 func (q *Quality) Stars() string {
