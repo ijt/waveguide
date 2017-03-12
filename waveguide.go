@@ -41,7 +41,10 @@ func handle(f func(ctx context.Context, w http.ResponseWriter, r *http.Request) 
 }
 
 // root shows the main page.
-func root(ctx context.Context, w http.ResponseWriter, _ *http.Request) (int, error) {
+func root(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.URL.Path != "/" {
+		return http.StatusNotFound, fmt.Errorf("%s not found", r.URL.Path)
+	}
 	q := datastore.NewQuery("Spot")
 	var spots []Spot
 	_, err := q.GetAll(ctx, &spots)
