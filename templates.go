@@ -2,7 +2,9 @@ package waveguide
 
 import "html/template"
 
-var head = template.HTML(`
+var tmpl = template.Must(template.New("").Parse(`
+{{define "header"}}
+<html>
         <head>
                 <title>Waveguide</title>
                 <style>
@@ -24,12 +26,16 @@ var head = template.HTML(`
                         }
                 </style>
         </head>
-`)
-
-var rootTmpl = template.Must(template.New("root").Parse(`
-<html>
-{{.Head}}
         <body>
+{{end}}
+
+{{define "footer"}}
+	</body>
+</html>
+{{end}}
+
+{{define "root"}}
+{{template "header"}}
                 <table>
                 	{{if .Spots}}
 				<thead>
@@ -64,6 +70,13 @@ var rootTmpl = template.Must(template.New("root").Parse(`
 				There's no data yet. You can get some by visiting <a href="/update_all">/update_all</a>.
 			{{end}}
                 </table>
-        </body>
-</html>
+{{template "footer"}}
+{{end}}
+
+{{define "action_response"}}
+{{template "header"}}
+		<div><a href="/">← home</a></div>
+		<div id="message">{{.Message}}</div>
+{{template "footer"}}
+{{end}}
 `))

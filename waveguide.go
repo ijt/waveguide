@@ -5,7 +5,6 @@ package waveguide
 import (
 	"fmt"
 	"html"
-	"html/template"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -69,13 +68,11 @@ func root(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 	}
 	sort.Sort(ByRating(spots))
 	data := struct {
-		Head  template.HTML
 		Spots []Spot
 	}{
-		Head:  head,
 		Spots: spots,
 	}
-	err = rootTmpl.Execute(w, data)
+	err = tmpl.ExecuteTemplate(w, "root", data)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("root: template: %v", err)
 	}
@@ -114,9 +111,8 @@ func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 			return http.StatusInternalServerError, err
 		}
 	}
-
-	fmt.Fprintf(w, "Processed %d paths.\n", len(reportPaths))
-	fmt.Fprintf(w, "ok")
+	data := struct{ Message string }{fmt.Sprintf("Processed %d paths.\n", len(reportPaths))}
+	tmpl.ExecuteTemplate(w, "action_response", data)
 	return http.StatusOK, nil
 }
 
@@ -137,7 +133,8 @@ func updateOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 		return http.StatusInternalServerError, err
 	}
 	SetSpotQuality(ctx, path, qual)
-	w.Write([]byte("ok"))
+	data := struct{ Message string }{fmt.Sprintf("Updated %s", path)}
+	tmpl.ExecuteTemplate(w, "action_response", data)
 	return http.StatusOK, nil
 }
 
@@ -180,8 +177,8 @@ func clear(ctx context.Context, w http.ResponseWriter, _ *http.Request) (int, er
 			return http.StatusInternalServerError, err
 		}
 	}
-	fmt.Fprintf(w, "Queued %d spots for deletion.\n", len(spots))
-	fmt.Fprintf(w, "ok")
+	data := struct{ Message string }{fmt.Sprintf("Queued %d spots for deletion.\n", len(spots))}
+	tmpl.ExecuteTemplate(w, "action_response", data)
 	return http.StatusOK, nil
 }
 
@@ -196,8 +193,8 @@ func deleteOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	fmt.Fprintf(w, "Deleted Spot %q\n", p)
-	fmt.Fprintf(w, "ok")
+	data := struct{ Message string }{fmt.Sprintf("Deleted Spot %q\n", p)}
+	tmpl.ExecuteTemplate(w, "action_response", data)
 	return http.StatusOK, nil
 }
 
@@ -231,7 +228,8 @@ func coords(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, e
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	fmt.Fprintf(w, "ok")
+	data := struct{ Message string }{"ok"}
+	tmpl.ExecuteTemplate(w, "action_response", data)
 	return http.StatusOK, nil
 }
 
