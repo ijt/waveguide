@@ -39,12 +39,9 @@ var rootTmpl = template.Must(template.New("root").Parse(`
 					{{range .Spots}}
 						<tr>
 							<td><a href="{{.MapURL}}">{{.HTMLName}}</a></td>
-							{{if .LatestQuality}}
-								{{ $q := .LatestQuality }}
-								<td><a href="{{.ReportURL}}">{{$q.Stars}}</a></td>
-								<td>{{$q.WaveHeight}}</td>
-								<td>{{$q.HowLong}} ago</td>
-							{{end}}
+							<td><a href="{{.ReportURL}}">{{.Cond.Stars}}</a></td>
+							<td>{{.Cond.WaveHeight}}</td>
+							<td>{{.Cond.HowLong}} ago</td>
 						</tr>
 					{{end}}
 				</tbody>

@@ -61,10 +61,6 @@ func (s *Spot) HTMLName() template.HTML {
 	return template.HTML(s.Name)
 }
 
-func (s *Spot) LatestQuality() *Quality {
-	return &s.Cond
-}
-
 func (s *Spot) ReportURL() string {
 	return "http://magicseaweed.com" + s.MswPath
 }
@@ -97,22 +93,13 @@ func (q *Quality) HowLong() string {
 	return s
 }
 
-// RatingExt gives the rating for the quality, or -1 if it is nil.
-// This is a helper for sorting.
-func (q *Quality) RatingExt() int {
-	if q == nil {
-		return -1
-	}
-	return q.Rating
-}
-
 // Sorting support
 type ByRating []Spot
 
 func (r ByRating) Len() int      { return len(r) }
 func (r ByRating) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
 func (r ByRating) Less(i, j int) bool {
-	rati := r[i].LatestQuality().RatingExt()
-	ratj := r[j].LatestQuality().RatingExt()
+	rati := r[i].Cond.Rating
+	ratj := r[j].Cond.Rating
 	return rati > ratj || (rati == ratj && r[i].Name < r[j].Name)
 }
