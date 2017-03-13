@@ -13,10 +13,11 @@ import (
 
 type Spot struct {
 	Name string
-	// TODO: Change to using a general url to be less coupled
-	// to a particular site.
+	// TODO: Change to using a general url to be less coupled to a particular site.
 	MswPath string
-	// Surf conditions at this spot, most recent last
+	// Surf conditions at this spot
+	Cond Quality
+	// Legacy field. Ignored.
 	Qual []Quality
 }
 
@@ -31,9 +32,9 @@ func SpotKey(ctx context.Context, mswPath string) *datastore.Key {
 	return datastore.NewKey(ctx, "Spot", mswPath, 0, nil)
 }
 
-// AddQualityToSpot adds a surfing condition quality to the spot with the given surf report path.
-// If there is no such spot in datastore, AddQualityToSpot creates one.
-func AddQualityToSpot(ctx context.Context, path string, qual *Quality) error {
+// SetSpotQuality adds a surfing condition quality to the spot with the given surf report path.
+// If there is no such spot in datastore, SetSpotQuality creates one.
+func SetSpotQuality(ctx context.Context, path string, qual *Quality) error {
 	var s Spot
 	key := SpotKey(ctx, path)
 	err := datastore.Get(ctx, key, &s)
@@ -42,17 +43,13 @@ func AddQualityToSpot(ctx context.Context, path string, qual *Quality) error {
 		// quality.
 		s.Name, err = surfReportPathToName(path)
 		if err != nil {
-			return fmt.Errorf("AddQualityToSpot: %v", err)
+			return fmt.Errorf("SetSpotQuality: %v", err)
 		}
 		s.MswPath = path
 	} else if err != nil {
 		return err
 	}
-	s.Qual = append(s.Qual, *qual)
-	for len(s.Qual) > maxQualitiesPerSpot {
-		drop := len(s.Qual) - maxQualitiesPerSpot
-		s.Qual = s.Qual[drop:len(s.Qual)]
-	}
+	s.Cond = *qual
 	_, err = datastore.Put(ctx, key, &s)
 	if err != nil {
 		return err
@@ -65,10 +62,7 @@ func (s *Spot) HTMLName() template.HTML {
 }
 
 func (s *Spot) LatestQuality() *Quality {
-	if len(s.Qual) == 0 {
-		return nil
-	}
-	return &s.Qual[len(s.Qual)-1]
+	return &s.Cond
 }
 
 func (s *Spot) ReportURL() string {
@@ -112,6 +106,7 @@ func (q *Quality) RatingExt() int {
 	return q.Rating
 }
 
+// Sorting support
 type ByRating []Spot
 
 func (r ByRating) Len() int      { return len(r) }

@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/aetest"
+	"google.golang.org/appengine/datastore"
 )
 
 func TestPutAndGetSpot(t *testing.T) {
@@ -14,18 +14,16 @@ func TestPutAndGetSpot(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer done()
-        spots := []Spot{
-		Spot {
-			Name: "Pacifica",
+	spots := []Spot{
+		{
+			Name:    "Pacifica",
 			MswPath: "/pacifica-surf-report/111",
-			Qual: nil,
 		},
-		Spot {
-			Name: "Pacifica",
+		{
+			Name:    "Pacifica",
 			MswPath: "/pacifica-surf-report/111",
-			Qual: []Quality{Quality{Rating:5, WaveHeight: "7 ft", TimeUnix: 5}},
+			Cond:    Quality{Rating: 5, WaveHeight: "7 ft", TimeUnix: 5},
 		},
-
 	}
 	for _, s := range spots {
 		key := SpotKey(ctx, s.MswPath)
@@ -48,8 +46,8 @@ func TestPutAndGetSpot(t *testing.T) {
 		if want.MswPath != got.MswPath {
 			t.Fatalf("MswPath: Got %q, want %q", got, want)
 		}
-		if !reflect.DeepEqual(want.Qual, got.Qual) {
-			t.Fatalf("Qual: Got %+v, want %+v", got.Qual, want.Qual)
+		if !reflect.DeepEqual(want.Cond, got.Cond) {
+			t.Fatalf("Cond: Got %+v, want %+v", got.Cond, want.Cond)
 		}
 	}
 }
@@ -60,10 +58,9 @@ func TestAddQualityToSpot(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer done()
-	s := Spot {
-		Name: "Cowell",
+	s := Spot{
+		Name:    "Cowell",
 		MswPath: "/cowell-surf-report/345",
-		Qual: nil,
 	}
 	key := SpotKey(ctx, s.MswPath)
 	_, err = datastore.Put(ctx, key, &s)
@@ -75,7 +72,7 @@ func TestAddQualityToSpot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get s2: Got %v, want no error", err)
 	}
-	s2.Qual = append(s2.Qual, Quality{Rating:5, WaveHeight: "7 ft", TimeUnix: 5})
+	s2.Cond = Quality{Rating: 5, WaveHeight: "7 ft", TimeUnix: 5}
 	_, err = datastore.Put(ctx, key, &s2)
 	if err != nil {
 		t.Fatalf("Put s2: Got %v, want no error", err)
@@ -93,7 +90,7 @@ func TestAddQualityToSpot(t *testing.T) {
 	if want.MswPath != got.MswPath {
 		t.Fatalf("MswPath: Got %q, want %q", got, want)
 	}
-	if !reflect.DeepEqual(want.Qual, got.Qual) {
-		t.Fatalf("Qual: Got %+v, want %+v", got.Qual, want.Qual)
+	if !reflect.DeepEqual(want.Cond, got.Cond) {
+		t.Fatalf("Cond: Got %+v, want %+v", got.Cond, want.Cond)
 	}
 }

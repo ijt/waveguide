@@ -47,11 +47,18 @@ func root(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 	if r.URL.Path != "/" {
 		return http.StatusNotFound, fmt.Errorf("%s not found", r.URL.Path)
 	}
-	q := datastore.NewQuery("Spot")
+	if err := r.ParseForm(); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	sn := r.FormValue("n")
 	var spots []Spot
-	log.Infof(ctx, "root: Before GetAll")
-	_, err := q.GetAll(ctx, &spots)
-	log.Infof(ctx, "root: After GetAll")
+	n, err := strconv.Atoi(sn)
+	q := datastore.NewQuery("Spot")
+	if err == nil {
+		log.Infof(ctx, "Limiting to top %d spots", n)
+		q = datastore.NewQuery("Spot").Order("-Cond.Rating").Limit(n)
+	}
+	_, err = q.GetAll(ctx, &spots)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("root: fetching spots: %v", err)
 	}
@@ -124,7 +131,7 @@ func updateOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	AddQualityToSpot(ctx, path, qual)
+	SetSpotQuality(ctx, path, qual)
 	w.Write([]byte("ok"))
 	return http.StatusOK, nil
 }
