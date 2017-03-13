@@ -103,24 +103,21 @@ func (q *Quality) HowLong() string {
 	return s
 }
 
+// RatingExt gives the rating for the quality, or -1 if it is nil.
+// This is a helper for sorting.
+func (q *Quality) RatingExt() int {
+	if q == nil {
+		return -1
+	}
+	return q.Rating
+}
+
 type ByRating []Spot
 
 func (r ByRating) Len() int      { return len(r) }
 func (r ByRating) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
 func (r ByRating) Less(i, j int) bool {
-	qi := r[i].LatestQuality()
-	qj := r[j].LatestQuality()
-	if qi == nil {
-		if qj == nil {
-			return true
-		} else {
-			return false
-		}
-	} else {
-		if qj == nil {
-			return true
-		} else {
-			return qi.Rating > qj.Rating
-		}
-	}
+	rati := r[i].LatestQuality().RatingExt()
+	ratj := r[j].LatestQuality().RatingExt()
+	return rati > ratj || (rati == ratj && r[i].Name < r[j].Name)
 }
