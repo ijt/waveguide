@@ -51,13 +51,16 @@ func root(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 		return http.StatusInternalServerError, err
 	}
 	sn := r.FormValue("n")
-	var spots []Spot
-	n, err := strconv.Atoi(sn)
-	q := datastore.NewQuery("Spot")
-	if err == nil {
-		log.Infof(ctx, "Limiting to top %d spots", n)
-		q = datastore.NewQuery("Spot").Order("-Cond.Rating").Limit(n)
+	if sn == "" {
+		sn = "250"
 	}
+	n, err := strconv.Atoi(sn)
+	if err != nil {
+		return http.StatusBadRequest, fmt.Errorf("Bad value %q for n parameter. Should be an integer.", sn)
+	}
+	log.Infof(ctx, "Limiting to top %d spots", n)
+	q := datastore.NewQuery("Spot").Order("-Cond.Rating").Limit(n)
+	var spots []Spot
 	_, err = q.GetAll(ctx, &spots)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("root: fetching spots: %v", err)
