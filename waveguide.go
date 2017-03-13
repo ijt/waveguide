@@ -1,5 +1,7 @@
 package waveguide
 
+// TODO: Change the error handling so users see non-technical error messages with at most an id that would correspond to something in the logs.
+
 import (
 	"fmt"
 	"html"
@@ -7,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,6 +29,7 @@ func init() {
 	http.HandleFunc("/show", handle(show))
 	http.HandleFunc("/clear", handle(clear))
 	http.HandleFunc("/delete_one", handle(deleteOne))
+	http.HandleFunc("/coords", handle(coords))
 }
 
 func handle(f func(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error)) func(http.ResponseWriter, *http.Request) {
@@ -183,6 +185,7 @@ func clear(ctx context.Context, w http.ResponseWriter, _ *http.Request) (int, er
 	return http.StatusOK, nil
 }
 
+// deleteOne deletes one Spot, given its MSW path as the "path" form value.
 func deleteOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
 	if err := r.ParseForm(); err != nil {
 		return http.StatusInternalServerError, err
@@ -194,6 +197,40 @@ func deleteOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 		return http.StatusInternalServerError, err
 	}
 	fmt.Fprintf(w, "Deleted Spot %q\n", p)
+	fmt.Fprintf(w, "ok")
+	return http.StatusOK, nil
+}
+
+// coords sets the coordinates for a Spot.
+func coords(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
+	if r.Method != "POST" {
+		return http.StatusBadRequest, fmt.Errorf("Got %q, want POST.", r.Method)
+	}
+	if err := r.ParseForm(); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	p := r.FormValue("path")
+	coordsStr := r.FormValue("coordinates")
+	key := SpotKey(ctx, p)
+	var s Spot
+	err := datastore.Get(ctx, key, &s)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	m := coordsRx.FindStringSubmatch(coordsStr)
+	if len(m) != 3 {
+		return http.StatusBadRequest, fmt.Errorf("Got %q, want match to %q", coordsStr, coordsRx)
+	}
+	latStr := m[1]
+	lngStr := m[2]
+	lat, err := strconv.ParseFloat(latStr, 32)
+	lng, err := strconv.ParseFloat(lngStr, 32)
+	s.Coordinates.Lat = lat
+	s.Coordinates.Lng = lng
+	_, err = datastore.Put(ctx, key, &s)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
 	fmt.Fprintf(w, "ok")
 	return http.StatusOK, nil
 }
@@ -210,12 +247,6 @@ func get(client *http.Client, url string) ([]byte, error) {
 	}
 	return body, nil
 }
-
-var starSectionRx = regexp.MustCompile(`<ul class="rating rating-large clearfix">.*?</ul>`)
-var starRx = regexp.MustCompile(`<li class="active"> *<i class="glyphicon glyphicon-star"></i> *</li>`)
-var heightRx = regexp.MustCompile(`(\d+(?:-\d+)?)<small>ft`)
-var reportRx = regexp.MustCompile(`/[^"/]+-Surf-Report/\d+/`)
-var srpTailRx = regexp.MustCompile(`-Surf-Report/\d+/`)
 
 func surfReportPathToName(srp string) (string, error) {
 	s := srpTailRx.ReplaceAllString(srp, "")

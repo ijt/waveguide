@@ -8,22 +8,20 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
 type Spot struct {
-	Name string
-	// TODO: Change to using a general url to be less coupled to a particular site.
-	MswPath string
-	// Surf conditions at this spot
-	Cond Quality
-	// Legacy field. Ignored.
-	Qual []Quality
+	Name        string
+	MswPath     string    // TODO: Change to using a general url to be less coupled to a particular site.
+	Cond        Quality   // Surf conditions at this spot
+	Qual        []Quality // Legacy field. Ignored.
+	Coordinates appengine.GeoPoint
 }
 
 type Quality struct {
-	// How many stars out of five
-	Rating     int
+	Rating     int // How many stars out of five
 	WaveHeight string
 	TimeUnix   int64
 }
@@ -61,12 +59,21 @@ func (s *Spot) HTMLName() template.HTML {
 	return template.HTML(s.Name)
 }
 
+func (s *Spot) CoordsInputId() string {
+	return s.MswPath + "_coords_input"
+}
+
 func (s *Spot) ReportURL() string {
 	return "http://magicseaweed.com" + s.MswPath
 }
 
 func (s *Spot) MapURL() string {
 	return strings.Replace(s.ReportURL(), "Report", "Guide", 1)
+}
+
+func (s *Spot) HasCoordinates() bool {
+	var zero appengine.GeoPoint
+	return s.Coordinates != zero
 }
 
 func (q *Quality) Stars() string {

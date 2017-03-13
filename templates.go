@@ -31,6 +31,7 @@ var rootTmpl = template.Must(template.New("root").Parse(`
                 	{{if .Spots}}
 				<thead>
 					<th>Location</th>
+					<th>Coordinates</th>
 					<th>Conditions</th>
 					<th>Wave Height</th>
 					<th>Last Updated</th>
@@ -39,6 +40,17 @@ var rootTmpl = template.Must(template.New("root").Parse(`
 					{{range .Spots}}
 						<tr>
 							<td><a href="{{.MapURL}}">{{.HTMLName}}</a></td>
+							<td>
+								{{if .HasCoordinates}}
+									{{.Coordinates}}
+								{{else}}
+									<form action="/coords" method="post">
+										<input type="hidden" name="path" value="{{.MswPath}}" />
+										<input name="coordinates" />
+										<button type="submit">Submit</button>
+									</form>
+								{{end}}
+							</td>
 							<td><a href="{{.ReportURL}}">{{.Cond.Stars}}</a></td>
 							<td>{{.Cond.WaveHeight}}</td>
 							<td>{{.Cond.HowLong}} ago</td>
