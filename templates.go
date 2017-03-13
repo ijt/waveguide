@@ -42,7 +42,7 @@ var rootTmpl = template.Must(template.New("root").Parse(`
 							<td><a href="{{.MapURL}}">{{.HTMLName}}</a></td>
 							<td>
 								{{if .HasCoordinates}}
-									{{.FormattedCoordinates}}
+									<a href="{{.MapsURL}}">{{.FormattedCoordinates}}</a>
 								{{else}}
 									<form action="/coords" method="post">
 										<input type="hidden" name="path" value="{{.MswPath}}" />

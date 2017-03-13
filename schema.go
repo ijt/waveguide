@@ -81,6 +81,11 @@ func (s *Spot) FormattedCoordinates() string {
 	return fmt.Sprintf("%.6f,%.6f", c.Lat, c.Lng)
 }
 
+func (s *Spot) MapsURL() string {
+	c := s.Coordinates
+	return fmt.Sprintf("http://maps.google.com?q=%f,%f", c.Lat, c.Lng)
+}
+
 func (q *Quality) Stars() string {
 	runes := make([]rune, 0, 5)
 	for i := 0; i < q.Rating; i++ {
