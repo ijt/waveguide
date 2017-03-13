@@ -27,6 +27,7 @@ func init() {
 	http.HandleFunc("/update_one", handle(updateOne))
 	http.HandleFunc("/show", handle(show))
 	http.HandleFunc("/clear", handle(clear))
+	http.HandleFunc("/delete_one", handle(deleteOne))
 }
 
 func handle(f func(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error)) func(http.ResponseWriter, *http.Request) {
@@ -134,7 +135,6 @@ func show(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 	if err := r.ParseForm(); err != nil {
 		return http.StatusInternalServerError, err
 	}
-	log.Infof(ctx, "/show. form: %v", r.Form)
 	su := r.FormValue("url")
 	u, err := url.Parse(su)
 	if err != nil {
@@ -150,6 +150,7 @@ func show(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, err
 	return http.StatusOK, nil
 }
 
+// clear removes all the Spots from datastore. They can easily be brought back with updateAll.
 func clear(ctx context.Context, w http.ResponseWriter, _ *http.Request) (int, error) {
 	// TODO: This may time out. Rewrite it to queue up a bunch of tasks to delete individual spots or batches of
 	// them.
@@ -162,11 +163,28 @@ func clear(ctx context.Context, w http.ResponseWriter, _ *http.Request) (int, er
 	keys := make([]*datastore.Key, len(spots))
 	for i, s := range spots {
 		keys[i] = SpotKey(ctx, s.MswPath)
+		t := taskqueue.NewPOSTTask("/delete_one", map[string][]string{"path": {s.MswPath}})
+		_, err = taskqueue.Add(ctx, t, "")
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
 	}
-	err = datastore.DeleteMulti(ctx, keys)
+	fmt.Fprintf(w, "Queued %d spots for deletion.", len(spots))
+	fmt.Fprintf(w, "ok")
+	return http.StatusOK, nil
+}
+
+func deleteOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
+	if err := r.ParseForm(); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	p := r.FormValue("path")
+	key := SpotKey(ctx, p)
+	err := datastore.Delete(ctx, key)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
+	fmt.Fprintf(w, "Deleted Spot %q\n", p)
 	fmt.Fprintf(w, "ok")
 	return http.StatusOK, nil
 }
