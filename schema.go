@@ -76,6 +76,11 @@ func (s *Spot) HasCoordinates() bool {
 	return s.Coordinates != zero
 }
 
+func (s *Spot) FormattedCoordinates() string {
+	c := s.Coordinates
+	return fmt.Sprintf("%.6f,%.6f", c.Lat, c.Lng)
+}
+
 func (q *Quality) Stars() string {
 	runes := make([]rune, 0, 5)
 	for i := 0; i < q.Rating; i++ {
