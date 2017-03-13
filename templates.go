@@ -19,6 +19,9 @@ var head = template.HTML(`
                         th, td {
                                 padding: 0 1em 0.5ex 0;
                         }
+                        form {
+                        	margin: 0
+                        }
                 </style>
         </head>
 `)
