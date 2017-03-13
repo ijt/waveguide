@@ -115,7 +115,6 @@ func updateOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 		return http.StatusInternalServerError, err
 	}
 	su := r.FormValue("url")
-	log.Infof(ctx, "/update_one: url=%q", su)
 	u, err := url.Parse(su)
 	if err != nil {
 		return http.StatusBadRequest, err
@@ -169,7 +168,7 @@ func clear(ctx context.Context, w http.ResponseWriter, _ *http.Request) (int, er
 			return http.StatusInternalServerError, err
 		}
 	}
-	fmt.Fprintf(w, "Queued %d spots for deletion.", len(spots))
+	fmt.Fprintf(w, "Queued %d spots for deletion.\n", len(spots))
 	fmt.Fprintf(w, "ok")
 	return http.StatusOK, nil
 }
