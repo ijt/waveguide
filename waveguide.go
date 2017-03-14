@@ -29,7 +29,8 @@ func init() {
 	http.HandleFunc("/clear", handle(clear))
 	http.HandleFunc("/delete_one", handle(deleteOne))
 	http.HandleFunc("/coords", handle(coords))
-	http.HandleFunc("/clear_coords", handle(clear_coords))
+	http.HandleFunc("/clear_coords", handle(clearCoords))
+	http.HandleFunc("/map", handle(doMap))
 }
 
 func handle(f func(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error)) func(http.ResponseWriter, *http.Request) {
@@ -230,13 +231,14 @@ func coords(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, e
 		return http.StatusInternalServerError, err
 	}
 	data := struct{ Message string }{"ok"}
+	// TODO: check err here and elsewhere.
 	tmpl.ExecuteTemplate(w, "action_response", data)
 	return http.StatusOK, nil
 }
 
-// clear_coords clears the coordinates for a Spot.
+// clearCoords clears the coordinates for a Spot.
 // It's not done by a DELETE request to /coords because it has to be accessible from links on a page.
-func clear_coords(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
+func clearCoords(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
 	if err := r.ParseForm(); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -254,6 +256,33 @@ func clear_coords(ctx context.Context, w http.ResponseWriter, r *http.Request) (
 	}
 	data := struct{ Message string }{"ok"}
 	tmpl.ExecuteTemplate(w, "action_response", data)
+	return http.StatusOK, nil
+}
+
+func doMap(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
+	if err := r.ParseForm(); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	sn := r.FormValue("n")
+	if sn == "" {
+		sn = "250"
+	}
+	n, err := strconv.Atoi(sn)
+	if err != nil {
+		return http.StatusBadRequest, fmt.Errorf("map: Bad value %q for n parameter. Should be an integer.", sn)
+	}
+	log.Infof(ctx, "Limiting to top %d spots", n)
+	q := datastore.NewQuery("Spot").Order("-Cond.Rating").Limit(n)
+	var spots []Spot
+	_, err = q.GetAll(ctx, &spots)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("map: Fetching spots: %v", err)
+	}
+	sort.Sort(ByRating(spots))
+	err = tmpl.ExecuteTemplate(w, "map", spots)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("map: %v", err)
+	}
 	return http.StatusOK, nil
 }
 
