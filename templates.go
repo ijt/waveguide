@@ -85,7 +85,7 @@ var tmpl = template.Must(template.New("").Parse(`
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Simple Map</title>
+    <title>Waveguide</title>
     <meta name="viewport" content="initial-scale=1.0">
     <meta charset="utf-8">
     <style>
@@ -109,8 +109,21 @@ var tmpl = template.Must(template.New("").Parse(`
       function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
           center: {lat: -34.397, lng: 150.644},
-          zoom: 8
+          zoom: 2
         });
+
+	var spots = [
+		{title: 'Ain Diab', lat: 33.5903816, lng: -7.6907272},
+		{title: 'Algarrobo', lat: -33.3449745, lng: -71.6567993},
+	]
+	for (var i = 0; i < spots.length; i++) {
+		var s = spots[i]
+		var marker = new google.maps.Marker({
+		  position: {lat: s.lat, lng: s.lng},
+		  map: map,
+		  title: s.title
+		});
+	}
       }
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDZ8Bm6MbFrfZ37ko8UTCDErLVQa5DBn8M&callback=initMap"
