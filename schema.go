@@ -79,12 +79,12 @@ func (s *Spot) HasCoordinates() bool {
 
 func (s *Spot) FormattedCoordinates() string {
 	c := s.Coordinates
-	return fmt.Sprintf("%.6f,%.6f", c.Lat, c.Lng)
+	return fmt.Sprintf("%.7f,%.7f", c.Lat, c.Lng)
 }
 
 func (s *Spot) MapsURL() string {
 	c := s.Coordinates
-	return fmt.Sprintf("http://maps.google.com?q=%f,%f", c.Lat, c.Lng)
+	return fmt.Sprintf("https://maps.google.com/?q=%.7f,%.7f&ll=%.7f,%.7f&z=14", c.Lat, c.Lng, c.Lat, c.Lng)
 }
 
 func (s *Spot) ClearCoordsURL() string {
