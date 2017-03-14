@@ -84,7 +84,7 @@ func (s *Spot) FormattedCoordinates() string {
 
 func (s *Spot) MapsURL() string {
 	c := s.Coordinates
-	return fmt.Sprintf("https://maps.google.com/?q=%.7f,%.7f&ll=%.7f,%.7f&z=14", c.Lat, c.Lng, c.Lat, c.Lng)
+	return fmt.Sprintf("https://maps.google.com/?q=%.7f,%.7f&ll=%.7f,%.7f&z=15", c.Lat, c.Lng, c.Lat, c.Lng)
 }
 
 func (s *Spot) ClearCoordsURL() string {
