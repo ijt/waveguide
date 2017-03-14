@@ -51,6 +51,7 @@ var tmpl = template.Must(template.New("").Parse(`
 							<td><a href="{{.MapURL}}">{{.HTMLName}}</a></td>
 							<td>
 								{{if .HasCoordinates}}
+									<a href="{{.ClearCoordsURL}}">❌</a>
 									<a href="{{.MapsURL}}">{{.FormattedCoordinates}}</a>
 								{{else}}
 									<form action="/coords" method="post">

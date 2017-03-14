@@ -1,6 +1,7 @@
 package waveguide
 
 import (
+	"net/url"
 	"reflect"
 	"testing"
 
@@ -92,5 +93,20 @@ func TestAddQualityToSpot(t *testing.T) {
 	}
 	if !reflect.DeepEqual(want.Cond, got.Cond) {
 		t.Fatalf("Cond: Got %+v, want %+v", got.Cond, want.Cond)
+	}
+}
+
+func TestClearCoordsURL(t *testing.T) {
+	var s Spot
+	s.MswPath = "/Pacifica-Surf-Report/123"
+	u := s.ClearCoordsURL()
+	u2, err := url.Parse(u)
+	if err != nil {
+		t.Fatalf("parse: Got %v, want no error", err)
+	}
+	q := u2.Query()
+	p := q.Get("path")
+	if p != s.MswPath {
+		t.Errorf("Got %q for path, want %q", p, s.MswPath)
 	}
 }

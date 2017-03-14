@@ -29,6 +29,7 @@ func init() {
 	http.HandleFunc("/clear", handle(clear))
 	http.HandleFunc("/delete_one", handle(deleteOne))
 	http.HandleFunc("/coords", handle(coords))
+	http.HandleFunc("/clear_coords", handle(clear_coords))
 }
 
 func handle(f func(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error)) func(http.ResponseWriter, *http.Request) {
@@ -224,6 +225,29 @@ func coords(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, e
 	lng, err := strconv.ParseFloat(lngStr, 32)
 	s.Coordinates.Lat = lat
 	s.Coordinates.Lng = lng
+	_, err = datastore.Put(ctx, key, &s)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	data := struct{ Message string }{"ok"}
+	tmpl.ExecuteTemplate(w, "action_response", data)
+	return http.StatusOK, nil
+}
+
+// clear_coords clears the coordinates for a Spot.
+// It's not done by a DELETE request to /coords because it has to be accessible from links on a page.
+func clear_coords(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, error) {
+	if err := r.ParseForm(); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	p := r.FormValue("path")
+	key := SpotKey(ctx, p)
+	var s Spot
+	err := datastore.Get(ctx, key, &s)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	s.Coordinates = appengine.GeoPoint{}
 	_, err = datastore.Put(ctx, key, &s)
 	if err != nil {
 		return http.StatusInternalServerError, err

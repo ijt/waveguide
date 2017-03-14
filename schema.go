@@ -3,6 +3,7 @@ package waveguide
 import (
 	"fmt"
 	"html/template"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -84,6 +85,15 @@ func (s *Spot) FormattedCoordinates() string {
 func (s *Spot) MapsURL() string {
 	c := s.Coordinates
 	return fmt.Sprintf("http://maps.google.com?q=%f,%f", c.Lat, c.Lng)
+}
+
+func (s *Spot) ClearCoordsURL() string {
+	var u url.URL
+	u.Path = "/clear_coords"
+	v := url.Values{}
+	v.Add("path", s.MswPath)
+	u.RawQuery = v.Encode()
+	return u.String()
 }
 
 func (q *Quality) Stars() string {
