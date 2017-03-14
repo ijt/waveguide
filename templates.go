@@ -113,16 +113,23 @@ var tmpl = template.Must(template.New("").Parse(`
         });
 
 	var spots = [
-		{title: 'Ain Diab', lat: 33.5903816, lng: -7.6907272},
-		{title: 'Algarrobo', lat: -33.3449745, lng: -71.6567993},
+		{{range .}}
+			{title: '{{.Name}} {{.Cond.Stars}}', lat: {{.Coordinates.Lat}}, lng: {{.Coordinates.Lng}}, rating: {{.Cond.Rating}} },
+		{{end}}
 	]
 	for (var i = 0; i < spots.length; i++) {
 		var s = spots[i]
+		if (s.lat == 0 && s.lng == 0) {
+			continue;
+		}
 		var marker = new google.maps.Marker({
 		  position: {lat: s.lat, lng: s.lng},
 		  map: map,
-		  title: s.title
-		});
+		  title: s.title,
+		  label: {
+		    text: s.title,
+		  },
+  		});
 	}
       }
     </script>
