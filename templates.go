@@ -4,13 +4,18 @@ import "html/template"
 
 var tmpl = template.Must(template.New("").Parse(`
 {{define "header"}}
-<html>
+<!DOCTYPE html>
         <head>
                 <title>Waveguide</title>
+		<meta name="viewport" content="initial-scale=1.0">
+		<meta charset="utf-8">
                 <style>
-                        body {
-                                font-family: monospace;
-                        }
+			html, body {
+				height: 100%;
+			}
+			body {
+				font-family: monospace;
+			}
                         table {
                                 border-collapse: separate;
                                 font-size: 12pt;
@@ -24,6 +29,9 @@ var tmpl = template.Must(template.New("").Parse(`
                         form {
                         	margin: 0
                         }
+			#map {
+				height: 100%;
+			}
                 </style>
         </head>
         <body>
@@ -82,25 +90,13 @@ var tmpl = template.Must(template.New("").Parse(`
 {{end}}
 
 {{define "map"}}
-<!DOCTYPE html>
-<!-- TODO: factor out header and footer. -->
-<html>
-	<head>
-		<title>Waveguide</title>
-		<meta name="viewport" content="initial-scale=1.0">
-		<meta charset="utf-8">
+{{template "header"}}
 		<style>
-#map {
-	height: 100%;
-}
-html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-}
+			html, body {
+				margin: 0;
+				padding: 0;
+			}
 		</style>
-	</head>
-	<body>
 		<div id="map"></div>
 		<script>
 var map;
@@ -139,7 +135,6 @@ function initMap() {
 }
 		</script>
 		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDZ8Bm6MbFrfZ37ko8UTCDErLVQa5DBn8M&callback=initMap" async defer></script>
-	</body>
-</html>
+{{template "footer"}}
 {{end}}
 `))
