@@ -60,7 +60,7 @@ var tmpl = template.Must(template.New("").Parse(`
 							<td>
 								{{if .HasCoordinates}}
 									<a href="{{.ClearCoordsURL}}">❌</a>
-									<a href="{{.MapsURL}}">{{.FormattedCoordinates}}</a>
+									<a href="{{.GoogleMapsURL}}">{{.FormattedCoordinates}}</a>
 								{{else}}
 									<form action="/coords" method="post">
 										<input type="hidden" name="path" value="{{.MswPath}}" />
@@ -133,7 +133,10 @@ function initMap() {
 	{{range .}}
 		var s = {
 			title: '{{.Name}}: {{.Cond.Stars}}',
-			content: '<div>{{.Name}}</div><div><a href="http://magicseaweed.com{{.MswPath}}">{{.Cond.Stars}}</a></div>',
+			content: ('<div>{{.Name}}</div>' +
+				  {{.StarsLinkToReport}} +
+				  '<div>Waves {{.Cond.WaveHeight}}</div>' +
+				  '<div>Updated {{.Cond.HowLong}} ago</div>'),
 			lat: {{.Coordinates.Lat}},
 			lng: {{.Coordinates.Lng}},
 		};

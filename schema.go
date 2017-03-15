@@ -64,12 +64,13 @@ func (s *Spot) CoordsInputId() string {
 	return s.MswPath + "_coords_input"
 }
 
-func (s *Spot) ReportURL() string {
-	return "http://magicseaweed.com" + s.MswPath
+func (s *Spot) ReportURL() template.HTML {
+	return template.HTML("http://magicseaweed.com" + s.MswPath)
 }
 
-func (s *Spot) MapURL() string {
-	return strings.Replace(s.ReportURL(), "Report", "Guide", 1)
+func (s *Spot) MapURL() template.HTML {
+	ru := strings.Replace(string(s.ReportURL()), "Report", "Guide", 1)
+	return template.HTML(ru)
 }
 
 func (s *Spot) HasCoordinates() bool {
@@ -82,9 +83,15 @@ func (s *Spot) FormattedCoordinates() string {
 	return fmt.Sprintf("%.7f,%.7f", c.Lat, c.Lng)
 }
 
-func (s *Spot) MapsURL() string {
+func (s *Spot) GoogleMapsURL() template.HTML {
 	c := s.Coordinates
-	return fmt.Sprintf("https://maps.google.com/?q=%.7f,%.7f&ll=%.7f,%.7f&z=15", c.Lat, c.Lng, c.Lat, c.Lng)
+	u := fmt.Sprintf("https://maps.google.com/?q=%.7f,%.7f&ll=%.7f,%.7f&z=15", c.Lat, c.Lng, c.Lat, c.Lng)
+	return template.HTML(u)
+}
+
+func (s *Spot) StarsLinkToReport() template.JSStr {
+	str := fmt.Sprintf("<div><a href='%s'>%s</a></div>", string(s.ReportURL()), s.Cond.Stars())
+	return template.JSStr(str)
 }
 
 func (s *Spot) ClearCoordsURL() string {
