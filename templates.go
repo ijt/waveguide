@@ -123,8 +123,9 @@ var addSpot = function(s) {
 };
 
 function initMap() {
+	var maui = {lat: 20.614489, lng: -156.439202};
 	map = new google.maps.Map(document.getElementById('map'), {
-		center: {lat: 20.8020856, lng: -156.8984559},
+		center: maui,
 		zoom: 2
 	});
 
