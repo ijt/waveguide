@@ -83,56 +83,63 @@ var tmpl = template.Must(template.New("").Parse(`
 
 {{define "map"}}
 <!DOCTYPE html>
+<!-- TODO: factor out header and footer. -->
 <html>
-  <head>
-    <title>Waveguide</title>
-    <meta name="viewport" content="initial-scale=1.0">
-    <meta charset="utf-8">
-    <style>
-      /* Always set the map height explicitly to define the size of the div
-       * element that contains the map. */
-      #map {
-        height: 100%;
-      }
-      /* Optional: Makes the sample page fill the window. */
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="map"></div>
-    <script>
-      var map;
-      function initMap() {
-        map = new google.maps.Map(document.getElementById('map'), {
-          center: {lat: 20.8020856, lng: -156.8984559},
-          zoom: 2
-        });
+	<head>
+		<title>Waveguide</title>
+		<meta name="viewport" content="initial-scale=1.0">
+		<meta charset="utf-8">
+		<style>
+#map {
+	height: 100%;
+}
+html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+}
+		</style>
+	</head>
+	<body>
+		<div id="map"></div>
+		<script>
+var map;
 
-	var spots = [
-		{{range .}}
-			{title: '{{.Name}} {{.Cond.Stars}}', lat: {{.Coordinates.Lat}}, lng: {{.Coordinates.Lng}}, rating: {{.Cond.Rating}} },
-		{{end}}
-	]
-	for (var i = 0; i < spots.length; i++) {
-		var s = spots[i]
-		if (s.lat == 0 && s.lng == 0) {
-			continue;
-		}
-		var marker = new google.maps.Marker({
-		  position: {lat: s.lat, lng: s.lng},
-		  map: map,
-		  title: s.title,
-  		});
+var addSpot = function(s) {
+	if (s.lat == 0 && s.lng == 0) {
+		return;
 	}
-      }
-    </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDZ8Bm6MbFrfZ37ko8UTCDErLVQa5DBn8M&callback=initMap"
-    async defer></script>
-  </body>
+	var latLng = {lat: s.lat, lng: s.lng}
+	var marker = new google.maps.Marker({
+		position: latLng,
+		map: map,
+		title: s.title,
+	});
+	var infowindow = new google.maps.InfoWindow({
+		content: s.title + '\n' + s.stars,
+		map: map,
+		position: latLng,
+	});
+	infowindow.close();
+	marker.addListener('click', function() {
+		infowindow.open(map, marker);
+	});
+};
+
+function initMap() {
+	map = new google.maps.Map(document.getElementById('map'), {
+		center: {lat: 20.8020856, lng: -156.8984559},
+		zoom: 2
+	});
+
+	{{range .}}
+		var s = {title: '{{.Name}}', stars: "{{.Cond.Stars}}", lat: {{.Coordinates.Lat}}, lng: {{.Coordinates.Lng}}, rating: {{.Cond.Rating}} };
+		addSpot(s);
+	{{end}}
+}
+		</script>
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDZ8Bm6MbFrfZ37ko8UTCDErLVQa5DBn8M&callback=initMap" async defer></script>
+	</body>
 </html>
 {{end}}
 `))
