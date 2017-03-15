@@ -112,7 +112,7 @@ var addSpot = function(s) {
 		title: s.title,
 	});
 	var infowindow = new google.maps.InfoWindow({
-		content: s.title + '\n' + s.stars,
+		content: s.content,
 		map: map,
 		position: latLng,
 	});
@@ -130,7 +130,12 @@ function initMap() {
 	});
 
 	{{range .}}
-		var s = {title: '{{.Name}}', stars: "{{.Cond.Stars}}", lat: {{.Coordinates.Lat}}, lng: {{.Coordinates.Lng}}, rating: {{.Cond.Rating}} };
+		var s = {
+			title: '{{.Name}}: {{.Cond.Stars}}',
+			content: '<div>{{.Name}}</div><div><a href="http://magicseaweed.com{{.MswPath}}">{{.Cond.Stars}}</a></div>',
+			lat: {{.Coordinates.Lat}},
+			lng: {{.Coordinates.Lng}},
+		};
 		addSpot(s);
 	{{end}}
 }
