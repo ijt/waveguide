@@ -126,9 +126,6 @@ var tmpl = template.Must(template.New("").Parse(`
 		  position: {lat: s.lat, lng: s.lng},
 		  map: map,
 		  title: s.title,
-		  label: {
-		    text: s.title,
-		  },
   		});
 	}
       }
