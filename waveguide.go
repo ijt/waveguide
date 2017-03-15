@@ -114,7 +114,10 @@ func updateAll(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 		}
 	}
 	data := struct{ Message string }{fmt.Sprintf("Processed %d paths.\n", len(reportPaths))}
-	tmpl.ExecuteTemplate(w, "action_response", data)
+	err = tmpl.ExecuteTemplate(w, "action_response", data)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("update_all: %v", err)
+	}
 	return http.StatusOK, nil
 }
 
@@ -136,7 +139,10 @@ func updateOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 	}
 	SetSpotQuality(ctx, path, qual)
 	data := struct{ Message string }{fmt.Sprintf("Updated %s", path)}
-	tmpl.ExecuteTemplate(w, "action_response", data)
+	err = tmpl.ExecuteTemplate(w, "action_response", data)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("update_one: %v", err)
+	}
 	return http.StatusOK, nil
 }
 
@@ -180,7 +186,10 @@ func clear(ctx context.Context, w http.ResponseWriter, _ *http.Request) (int, er
 		}
 	}
 	data := struct{ Message string }{fmt.Sprintf("Queued %d spots for deletion.\n", len(spots))}
-	tmpl.ExecuteTemplate(w, "action_response", data)
+	err = tmpl.ExecuteTemplate(w, "action_response", data)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("clear: %v", err)
+	}
 	return http.StatusOK, nil
 }
 
@@ -196,7 +205,10 @@ func deleteOne(ctx context.Context, w http.ResponseWriter, r *http.Request) (int
 		return http.StatusInternalServerError, err
 	}
 	data := struct{ Message string }{fmt.Sprintf("Deleted Spot %q\n", p)}
-	tmpl.ExecuteTemplate(w, "action_response", data)
+	err = tmpl.ExecuteTemplate(w, "action_response", data)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("delete_one: %v", err)
+	}
 	return http.StatusOK, nil
 }
 
@@ -231,8 +243,10 @@ func coords(ctx context.Context, w http.ResponseWriter, r *http.Request) (int, e
 		return http.StatusInternalServerError, err
 	}
 	data := struct{ Message string }{"ok"}
-	// TODO: check err here and elsewhere.
-	tmpl.ExecuteTemplate(w, "action_response", data)
+	err = tmpl.ExecuteTemplate(w, "action_response", data)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("coords: %v", err)
+	}
 	return http.StatusOK, nil
 }
 
@@ -255,7 +269,10 @@ func clearCoords(ctx context.Context, w http.ResponseWriter, r *http.Request) (i
 		return http.StatusInternalServerError, err
 	}
 	data := struct{ Message string }{"ok"}
-	tmpl.ExecuteTemplate(w, "action_response", data)
+	err = tmpl.ExecuteTemplate(w, "action_response", data)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("clear_coords: %v", err)
+	}
 	return http.StatusOK, nil
 }
 
